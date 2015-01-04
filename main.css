@@ -25,6 +25,10 @@ p {
 	margin-bottom: 6pt;
 }
 
+img {
+	margin: 0 30px;
+}
+	
 form {
 	margin-bottom: 20px;
 }

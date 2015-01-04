@@ -153,6 +153,7 @@ if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak th
 		<meta http-equiv="pragma" content="no-cache">
 	</head>
 	<body>
+		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" width="105" align="right" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from the template but don't transclude the template.</p>
 		<form action="index.php" method="GET">
