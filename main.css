@@ -9,13 +9,19 @@ body {
 }
 
 h1 {
-	font-size: 18pt;
+	font-weight: normal;
+	font-size: 16pt;
+	letter-spacing: 0.1em;
 	margin-top: 10pt;
 	margin-bottom: 0;
+	font-variant:small-caps;
+	color: maroon;
 }
 
 h2 {
-	font-size: 14pt;
+	font-weight: bold;
+	font-size: 10pt;
+	letter-spacing: 0.1em;
 	margin-top: 10pt;
 	margin-bottom: 0;
 }
