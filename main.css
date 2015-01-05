@@ -42,17 +42,25 @@ form {
 a {
 	text-decoration: none;
 }
-
 a:link, a:visited {
 	color: blue;
 }
-
 a:hover {
 	text-decoration: underline;
 }
 a:active {
 	color: red;
 }
+
+.redlink{ /* Used when linking to wiki articles that do not exist */
+	color: red !important;
+}
+.bluelink{ /* Used when linking to wiki articles that exist */
+	color: blue !important;
+}
+/*a.redlink:link, a.redlink:visited {
+	color: red;
+}*/
 
 .stats, .info {
 	color: gray;

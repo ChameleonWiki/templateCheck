@@ -1,9 +1,9 @@
 ﻿<?php
 /*
-	Purpose:		Checks and reports which articles that transcludes a template that are not linked from the template,
-	            and which articles that are linked from the template but don't transclude the template.
-	            Typical use: http://en.wikipedia.org/wiki/Template:Squad_maintenance
-	Written:    03. Jan. 2015
+	Purpose:  Checks and reports which articles that transcludes a template that are not linked from the template,
+	          and which articles that are linked from the template but don't transclude the template.
+	          Typical use: http://en.wikipedia.org/wiki/Template:Squad_maintenance
+	Written:  03. Jan. 2015
 
 	Copyright (c) 2015, Chameleon
 	All rights reserved.
@@ -26,6 +26,8 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+require_once('/data/project/jarry-common/public_html/libs/database.php');
+
 // Now give us access to Peachy's helpful HTTP library without necessarily including the whole of Peachy
 require_once('/data/project/jarry-common/public_html/peachy/Includes/Hooks.php');
 require_once('/data/project/jarry-common/public_html/peachy/HTTP.php');
@@ -35,11 +37,13 @@ function wpServer($language)
 	return "https://$language.wikipedia.org/";
 }
 
-function wpLink($wpServer, $title)
+function wpLink($wpServer, $title, $exists = true)
 {
 	$url = $wpServer . 'wiki/' . str_replace(' ', '_', $title);
-	$urlEdit = $wpServer . 'w/index.php?action=edit&title=' . str_replace(' ', '_', $title);
-	return '<a href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">edit</a>)';
+	$urlEdit = $wpServer . 'w/index.php?title=' . str_replace(' ', '_', $title) . '&action=edit';
+	if ($exists) // Existing page?
+		return '<a href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">edit</a>)';
+	return '<a class ="redlink" href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">create</a>)';
 }
 
 function wpApiClient($wpServer)
@@ -71,12 +75,10 @@ function transclusionsOf($wpApi, $template)
 		die('Oops, sorry: ' . $e->getMessage());
 	}
 	if($json == false || count($json) == 0) return array();
-	//print_r($json);
 	
 	$tmp = current($json['query']['pages']);
 	if (!array_key_exists('transcludedin', $tmp)) return array();
-	$transclusions = $tmp['transcludedin'];
-	return $transclusions;
+	return $tmp['transcludedin'];
 }
 
 // Get which articles a template links to
@@ -93,12 +95,41 @@ function linksFrom($wpApi, $template)
 		die('Oops, sorry: ' . $e->getMessage());
 	}
 	if($json == false || count($json) == 0) return array();
-	//print_r($json);
 
 	$tmp = current($json['query']['pages']);
 	if (!array_key_exists('links', $tmp)) return array();
-	$links = $tmp['links'];
-	return $links;
+	return $tmp['links'];
+}
+
+// Get pageid for an wiki page, 0 if not existing
+function pageId($db, $namespace, $title)
+{
+	$result = $db->query("SELECT page_id FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string($namespace) . "';");
+	if (!isset($result)) return 0;
+	$row = $result->fetch_array();
+	if (!isset($row)) return 0;
+	return $row[0];
+}
+
+// Do the articles the template link to exist?
+function checkExistance($db, &$links)
+{
+	foreach ($links as &$c)
+		$c['pageid'] = pageId($db, $c['ns'], $c['title']);
+}
+
+// Check if template exists
+function templateExists($db, $template)
+{
+	$templateName = $template;
+	$namespaceDelimiter = strpos($template, ':');
+	if ($namespaceDelimiter > 0)
+	{
+		$templateName = substr($templateName, $namespaceDelimiter + 1);
+		if (isset($templateName) && $templateName != '')
+			return pageId($db, 10, $templateName) != 0;
+	}
+	return false;
 }
 
 // Returns a list of titles that exists in arrayA but not in arrayB
@@ -112,7 +143,7 @@ function arrayDiff($arrayA, $arrayB)
 		{
 			// Transfer all from A
 			foreach ($arrayA as $a)
-				array_push($not, $a['title']);
+				array_push($not, $a);
 		}
 	}
 	elseif (!empty($arrayA))
@@ -129,7 +160,7 @@ function arrayDiff($arrayA, $arrayB)
 				}
 			}
 			if (!$found)
-				array_push($not, $a['title']);
+				array_push($not, $a);
 		}
 	}
 	return $not;
@@ -167,65 +198,78 @@ if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak th
 
 if (isset($_GET['lang']))
 {
-	$template = str_replace(' ', '_', $template);
-	$server = wpServer($language);
-
-	$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
-	$transclusions = transclusionsOf($wpApi, $template);
-	$links = linksFrom($wpApi, $template);
-
-	echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";
+	$db = NULL;
+	try
+	{
+		$db = dbconnect($language . 'wiki-p');
+	}
+	catch (Exception $e)
+	{
+		die('Oops, sorry: ' . $e->getMessage());
+	}
 	
-	// Any articles that transcludes template but are not linked from template?
-	$notLinked = arrayDiff($transclusions, $links);
-	echo('<h2>Articles that transcludes the template but are not linked from template</h2>' . "\n");
-	echo('<p>Total: ' . count($notLinked) . "</p>\n");
-	if (!empty($notLinked))
+	$server = wpServer($language);
+	if (!templateExists($db, $template))
+		echo '<p>Template ' . wpLink($server, str_replace('_', ' ', $template), false) . " does not exist.</p>\n";
+	else // Seems like it exist...
 	{
-		echo("<ol>\n");
-		foreach ($notLinked as $c)
-			echo('<li>' . wpLink($server, $c) . "</li>\n");
-		echo("</ol>\n");
-	}
+		$template = str_replace(' ', '_', $template);
+		$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
+		$transclusions = transclusionsOf($wpApi, $template);
+		$links = linksFrom($wpApi, $template);
+		checkExistance($db, $links);
 
-	// Any articles that are linked from the template but do not transclude the template?
-	$notTranscluding = arrayDiff($links, $transclusions);
-	echo('<h2>Articles that are linked from the template but do not transclude the template</h2>' . "\n");
-	echo('<p>Total: ' . count($notTranscluding) . "</p>\n");
-	if (!empty($notTranscluding))
-	{
-		echo("<ol>\n");
-		foreach ($notTranscluding as $c)
-			echo('<li>' . wpLink($server, $c) . "</li>\n");
-		echo("</ol>\n");
-	}
+		echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";
+		
+		// Any articles that transcludes template but are not linked from template?
+		$notLinked = arrayDiff($transclusions, $links);
+		echo('<h2>Articles that transcludes the template but are not linked from template</h2>' . "\n");
+		echo('<p>Total: ' . count($notLinked) . "</p>\n");
+		if (!empty($notLinked))
+		{
+			echo("<ol>\n");
+			foreach ($notLinked as $c)
+				echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
+			echo("</ol>\n");
+		}
 
-	// Template transclusions
-	echo('<h2>Articles that transcludes template</h2>' . "\n");
-	echo('<p>Transclusion count: ' . count($transclusions) . "</p>\n");
-	if (!empty($transclusions))
-	{
-		echo("<ol>\n");
-		foreach ($transclusions as $c)
-			echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
-		echo("</ol>\n");
-	}
+		// Any articles that are linked from the template but do not transclude the template?
+		$notTranscluding = arrayDiff($links, $transclusions);
+		echo('<h2>Articles that are linked from the template but do not transclude the template</h2>' . "\n");
+		echo('<p>Total: ' . count($notTranscluding) . "</p>\n");
+		if (!empty($notTranscluding))
+		{
+			echo("<ol>\n");
+			foreach ($notTranscluding as $c)
+				echo('<li>' . wpLink($server, $c['title'], $c['pageid'] != '0') . "</li>\n");
+			echo("</ol>\n");
+		}
 
-	// Links from template to articles
-	echo('<h2>Articles that are linked from template</h2>' . "\n");
-	echo('<p>Link count: ' . count($links) . "</p>\n");
-	if (!empty($links))
-	{
-		echo("<ol>\n");
-		foreach ($links as $c)
-			echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
-		echo("</ol>\n");
-	}
+		// Template transclusions
+		echo('<h2>Articles that transcludes template</h2>' . "\n");
+		echo('<p>Transclusion count: ' . count($transclusions) . "</p>\n");
+		if (!empty($transclusions))
+		{
+			echo("<ol>\n");
+			foreach ($transclusions as $c)
+				echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
+			echo("</ol>\n");
+		}
 
+		// Links from template to articles
+		echo('<h2>Articles that are linked from template</h2>' . "\n");
+		echo('<p>Link count: ' . count($links) . "</p>\n");
+		if (!empty($links))
+		{
+			echo("<ol>\n");
+			foreach ($links as $c)
+				echo('<li>' . wpLink($server, $c['title'], $c['pageid'] != '0') . "</li>\n");
+			echo("</ol>\n");
+		}
+	}
 	$diffTime = time() - $oldTime;
 	echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';
 }
-
 ?>
 <p class="info"><a href="./index.html">Tool</a> provided by <a href="http://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="http://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
 </body>
