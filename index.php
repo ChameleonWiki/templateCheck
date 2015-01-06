@@ -75,7 +75,7 @@ function transclusionsOf($wpApi, $template)
 	{
 		die('Oops, sorry: ' . $e->getMessage());
 	}
-	if($json == false || count($json) == 0) return array();
+	if ($json == false || count($json) == 0) return array();
 	
 	$tmp = current($json['query']['pages']);
 	if (!array_key_exists('transcludedin', $tmp)) return array();
@@ -102,21 +102,63 @@ function linksFrom($wpApi, $template)
 	return $tmp['links'];
 }
 
-// Get pageid for an wiki page, 0 if not existing
+// Get misc status for a wiki page, 0 if not existing
+function pageStatus($db, $namespace, $title)
+{
+	$result = $db->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string($namespace) . "';");
+	if (!isset($result))
+		return array();
+	$row = $result->fetch_array();
+	if (!isset($row))
+		return array();
+	$status['pageid'] = $row['page_id'];
+	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] == '1')
+	{
+		$result = $db->query("SELECT rd_title FROM redirect WHERE rd_from='" . $db->real_escape_string($status['pageid']) . "';");
+		if (isset($result))
+		{
+			$row = $result->fetch_array();
+			if (isset($row))
+			{
+				// Might also want namespace for redirect target
+				$status['redirect_title'] = $row['rd_title'];
+				$status['redirect_pageid'] = pageId($db, $namespace, $status['redirect_title']); // Recursive...
+			}
+		}
+	}
+	return $status;
+}
+
+// Get pageid for a wiki page, 0 if not existing
 function pageId($db, $namespace, $title)
 {
-	$result = $db->query("SELECT page_id FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string($namespace) . "';");
-	if (!isset($result)) return 0;
-	$row = $result->fetch_array();
-	if (!isset($row)) return 0;
-	return $row[0];
+	$status = pageStatus($db, $namespace, $title);
+	if (!isset($status['pageid']))
+		return 0;
+	return $status['pageid'];
 }
 
 // Do the articles the template link to exist?
-function checkExistance($db, &$links)
+function checkStatus($db, &$links)
 {
+	$redirects = array();
 	foreach ($links as &$c)
-		$c['pageid'] = pageId($db, $c['ns'], $c['title']);
+	{
+		$status = pageStatus($db, $c['ns'], $c['title']);
+		if (!isset($status['pageid']))
+			$c['pageid'] = 0;
+		else
+		{
+			$c['pageid'] = $status['pageid'];
+			if (isset($status['redirect_title']))
+			{
+				$c['redirect_title'] = $status['redirect_title'];
+				$c['redirect_pageid'] = isset($status['redirect_pageid']) ? $status['redirect_pageid'] : 0;
+				array_push($redirects, $c);
+			}
+		}
+	}
+	return $redirects;
 }
 
 // Check if template exists
@@ -147,22 +189,34 @@ function arrayDiff($arrayA, $arrayB)
 	{
 		foreach ($arrayA as $a)
 		{
-			$found = false;
+			$found = 0;
 			foreach ($arrayB as $b)
 			{
 				if ($a['title'] == $b['title'])
 				{
-					$found = true;
+					$found = 1; // Direct
+					break;
+				}
+				if (isset($b['redirect_pageid']) && $b['redirect_pageid'] != 0 && $a['title'] == $b['redirect_title'])
+				{
+					$found = 2; // Indirect
+					break;
+				}
+				if (isset($a['redirect_pageid']) && $a['redirect_pageid'] != 0 && $b['title'] == $a['redirect_title'])
+				{
+					$found = 2; // Indirect
 					break;
 				}
 			}
-			if (!$found)
+			if ($found == 0)
 				array_push($not, $a);
 		}
 	}
 	return $not;
 }
 
+define('redirectSymbolR', ' <span class="redirect">&rarr;</span> ');
+define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 $oldTime = time();
 $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', htmlspecialchars($_GET['name'], ENT_QUOTES)) : '';
@@ -216,10 +270,10 @@ if (isset($_GET['lang']))
 		$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
 		$transclusions = transclusionsOf($wpApi, $template);
 		$links = linksFrom($wpApi, $template);
-		checkExistance($db, $links); // Check which links that do not exist
-
+		$redirects = checkStatus($db, $links); // Check which links that do not exist
+		
 		echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";		
-		echo "<table>\n";
+		echo '<table width="90%">' . "\n";
 		echo '<tr><th colspan="2"><h2>Mismatch between transclusions and links</h2></th></tr>' . "\n";
 		echo '<tr><th width="50%">Transclusion but no link</th><th>Link but no transclusion</th></tr>' . "\n";
 		
@@ -239,20 +293,47 @@ if (isset($_GET['lang']))
 		if (!empty($notTranscluding))
 		{
 			foreach ($notTranscluding as $c)
-				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != '0');
+			{
+				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
+				if (isset($c['redirect_title']) && $c['redirect_title'] != '')
+					echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
+			}
 		}
 		echo "</p></td></tr>\n";
+		
+		if (!empty($redirects))
+		{
+			// Display redirects from template
+			echo '<tr><th>&nbsp;</th><th>Links to redirects</th></tr>' . "\n";
+			echo '<tr><td>&nbsp;</td><td><p>Total: ' . count($redirects);
+			foreach ($redirects as $c)
+			{
+				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
+				echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
+			}
+			echo "</p></td></tr>\n";
+		}
 
 		if ($complete) // Display 
 		{
 			// Template transclusions
-			echo '<tr><th colspan="2">&nbsp;</th></tr>' . "\n"; // Some space
+			echo '<tr><th colspan="2"><h2>Complete transclusion and link overview</h2></th></tr>' . "\n";
 			echo "<tr><th>Transclutions of template</th><th>Links from template</th></tr>\n";
 			echo '<tr><td><p>Transclusion count: ' . count($transclusions);
 			if (!empty($transclusions))
 			{
 				foreach ($transclusions as $c)
+				{
 					echo "\n<br />" . wpLink($server, $c['title']);
+					foreach ($redirects as $r)
+					{
+						if ($r['redirect_pageid'] == $c['pageid'])
+						{
+							echo redirectSymbolL . wpLink($server, $r['title']);
+							break;
+						}
+					}
+				}
 			}
 			echo "</p></td>\n";
 
@@ -261,12 +342,16 @@ if (isset($_GET['lang']))
 			if (!empty($links))
 			{
 				foreach ($links as $c)
-					echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != '0');
+				{
+					echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
+					if (isset($c['redirect_title']) && $c['redirect_title'] != '')
+						echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
+				}
 			}
 			echo "</p></td></tr>\n";
 		}
 		echo "</table>\n";
-		
+	
 		if (!$complete)
 			echo '<p>&nbsp;</p><p><a href="./' . SCRIPTNAME . "?lang=$language&name=$template" . '&complete=1">Complete report...</a></p>' . "\n";
 	}

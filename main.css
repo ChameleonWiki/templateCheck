@@ -34,6 +34,9 @@ table, tr, th, td  {
 	vertical-align: top;
 	border: none;
 }
+td, th {
+	padding-right: 10pt;
+}
 
 ul {
 	margin-top: 0;
@@ -74,6 +77,9 @@ a:active {
 /*a.redlink:link, a.redlink:visited {
 	color: red;
 }*/
+.redirect {
+	color: green;
+}
 
 .stats, .info {
 	color: gray;
