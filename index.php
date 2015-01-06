@@ -25,6 +25,7 @@
 */
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
+define('SCRIPTNAME', 'index.php');
 
 require_once('/data/project/jarry-common/public_html/libs/database.php');
 
@@ -140,11 +141,7 @@ function arrayDiff($arrayA, $arrayB)
 	if (empty($arrayB))
 	{
 		if (!empty($arrayA))
-		{
-			// Transfer all from A
-			foreach ($arrayA as $a)
-				array_push($not, $a);
-		}
+			$not = $arrayA; // None of the entries in arrayA exist in arrayB...
 	}
 	elseif (!empty($arrayA))
 	{
@@ -169,6 +166,8 @@ function arrayDiff($arrayA, $arrayB)
 $oldTime = time();
 $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', htmlspecialchars($_GET['name'], ENT_QUOTES)) : '';
+$complete = (isset($_GET['complete']) && $_GET['complete'] == '1') ? true : false;
+
 if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
 
 ?>
@@ -187,11 +186,11 @@ if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak th
 		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" width="105" align="right" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from the template but don't transclude the template.</p>
-		<form action="index.php" method="GET">
+		<form action="./<?php echo SCRIPTNAME; ?>" method="GET">
 			<table>
 				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="7" required="required" />.wikipedia.org</td></tr>
 				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" style="width:200px;" value="<?php echo $template; ?>" required="required" /> (including namespace)</td></tr>
-				<tr><td></td><td><input type="submit" value="Check!" /></td></tr>
+				<tr><td><label for="complete">Generate complete report:</label></td><td><input type="checkbox" name="complete" value="1"<?php if ($complete) echo ' checked'; ?> /><input type="submit" value="Check!" /></td></tr>
 			</table>
 		</form>
 <?php
@@ -217,55 +216,59 @@ if (isset($_GET['lang']))
 		$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
 		$transclusions = transclusionsOf($wpApi, $template);
 		$links = linksFrom($wpApi, $template);
-		checkExistance($db, $links);
+		checkExistance($db, $links); // Check which links that do not exist
 
-		echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";
+		echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";		
+		echo "<table>\n";
+		echo '<tr><th colspan="2"><h2>Mismatch between transclusions and links</h2></th></tr>' . "\n";
+		echo '<tr><th width="50%">Transclusion but no link</th><th>Link but no transclusion</th></tr>' . "\n";
 		
 		// Any articles that transcludes template but are not linked from template?
 		$notLinked = arrayDiff($transclusions, $links);
-		echo('<h2>Articles that transcludes the template but are not linked from template</h2>' . "\n");
-		echo('<p>Total: ' . count($notLinked) . "</p>\n");
+		echo '<tr><td><p>Total: ' . count($notLinked);
 		if (!empty($notLinked))
 		{
-			echo("<ol>\n");
 			foreach ($notLinked as $c)
-				echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
-			echo("</ol>\n");
+				echo "\n<br />" . wpLink($server, $c['title']);
 		}
+		echo "</p></td>\n";
 
 		// Any articles that are linked from the template but do not transclude the template?
 		$notTranscluding = arrayDiff($links, $transclusions);
-		echo('<h2>Articles that are linked from the template but do not transclude the template</h2>' . "\n");
-		echo('<p>Total: ' . count($notTranscluding) . "</p>\n");
+		echo '<td><p>Total: ' . count($notTranscluding);
 		if (!empty($notTranscluding))
 		{
-			echo("<ol>\n");
 			foreach ($notTranscluding as $c)
-				echo('<li>' . wpLink($server, $c['title'], $c['pageid'] != '0') . "</li>\n");
-			echo("</ol>\n");
+				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != '0');
 		}
+		echo "</p></td></tr>\n";
 
-		// Template transclusions
-		echo('<h2>Articles that transcludes template</h2>' . "\n");
-		echo('<p>Transclusion count: ' . count($transclusions) . "</p>\n");
-		if (!empty($transclusions))
+		if ($complete) // Display 
 		{
-			echo("<ol>\n");
-			foreach ($transclusions as $c)
-				echo('<li>' . wpLink($server, $c['title']) . "</li>\n");
-			echo("</ol>\n");
-		}
+			// Template transclusions
+			echo '<tr><th colspan="2">&nbsp;</th></tr>' . "\n"; // Some space
+			echo "<tr><th>Transclutions of template</th><th>Links from template</th></tr>\n";
+			echo '<tr><td><p>Transclusion count: ' . count($transclusions);
+			if (!empty($transclusions))
+			{
+				foreach ($transclusions as $c)
+					echo "\n<br />" . wpLink($server, $c['title']);
+			}
+			echo "</p></td>\n";
 
-		// Links from template to articles
-		echo('<h2>Articles that are linked from template</h2>' . "\n");
-		echo('<p>Link count: ' . count($links) . "</p>\n");
-		if (!empty($links))
-		{
-			echo("<ol>\n");
-			foreach ($links as $c)
-				echo('<li>' . wpLink($server, $c['title'], $c['pageid'] != '0') . "</li>\n");
-			echo("</ol>\n");
+			// Links from template to articles
+			echo '<td><p>Link count: ' . count($links);
+			if (!empty($links))
+			{
+				foreach ($links as $c)
+					echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != '0');
+			}
+			echo "</p></td></tr>\n";
 		}
+		echo "</table>\n";
+		
+		if (!$complete)
+			echo '<p>&nbsp;</p><p><a href="./' . SCRIPTNAME . "?lang=$language&name=$template" . '&complete=1">Complete report...</a></p>' . "\n";
 	}
 	$diffTime = time() - $oldTime;
 	echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';

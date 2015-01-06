@@ -14,16 +14,29 @@ h1 {
 	letter-spacing: 0.1em;
 	margin-top: 10pt;
 	margin-bottom: 0;
-	font-variant:small-caps;
+	font-variant: small-caps;
 	color: maroon;
 }
 
-h2 {
+th, h2 {
+	text-align: left;
 	font-weight: bold;
 	font-size: 10pt;
+}
+
+h2 {
 	letter-spacing: 0.1em;
 	margin-top: 10pt;
 	margin-bottom: 0;
+}
+
+table, tr, th, td  {
+	vertical-align: top;
+	border: none;
+}
+
+ul {
+	margin-top: 0;
 }
 
 p {

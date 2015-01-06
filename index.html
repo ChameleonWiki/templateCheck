@@ -6,13 +6,38 @@
 		<meta http-equiv="Content-Style-Type" content="text/css">
 		<link rel="stylesheet" href="./main.css" type="text/css">
 		<meta name="robots" content="noindex,nofollow">
+		<style type="text/css">
+			td, th {
+				padding-right: 30pt;
+			}
+		</style>
 	</head>
 	<body>
 		<p><a href="http://tools.wmflabs.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Wikimedia_labs_logo.svg" width="100" align="right" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from the template but don't transclude the template.</p>
-		<p>Tool is available at <a href="http://tools.wmflabs.org/templatetransclusioncheck/index.php">http://tools.wmflabs.org/templatetransclusioncheck/index.php</a>.</p>
-		<p>Source is available at <a href="http://github.com/ChameleonWiki/templateCheck">GitHub</a>.</p>
+		
+		<table>
+			<tr><th colspan="3"><h2>Parameters</h2></th></tr>
+			<tr><th>Name</th><th>Status</th><th>Description</th></tr>
+			<tr><td><tt>lang</tt></td><td>Required</td><td>Language code for wiki</td></tr>
+			<tr><td><tt>name</tt></td><td>Required</td><td>Name for template including namespace</td></tr>
+			<tr><td><tt>complete</tt></td><td>Optional</td><td>If set to 1 then also the complete transclusion/link lists are displayed</td></tr>
+		</table>
+		
+		<h2>Example code for use in Wikipedia</h2>
+		<ul>
+		<!--- li>[[toollabs:templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}|Check completeness of transclusions]]</li -->
+		<li>[{{fullurl:toollabs:templatetransclusioncheck|lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}}} Check completeness of transclusions]</li>
+		<li>[http://tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}} Check completeness of transclusions]</li>
+		</ul>
+		
+		<h2>Miscellaneous</h2>
+		<ul>
+		<li>Tool is available at <a href="./index.php">http://tools.wmflabs.org/templatetransclusioncheck/index.php</a>.</li>
+		<li>Source is available at <a href="http://github.com/ChameleonWiki/templateCheck">GitHub</a>.</li>
+		</ul>
+		
 		<p class="info">Tool provided by <a href="http://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="http://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
 	</body>
 </html>
