@@ -112,7 +112,7 @@ function pageStatus($db, $namespace, $title)
 	if (!isset($row))
 		return array();
 	$status['pageid'] = $row['page_id'];
-	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] == '1')
+	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] === '1')
 	{
 		$result = $db->query("SELECT rd_title FROM redirect WHERE rd_from='" . $db->real_escape_string($status['pageid']) . "';");
 		if (isset($result))
@@ -152,7 +152,7 @@ function checkStatus($db, &$links)
 			$c['pageid'] = $status['pageid'];
 			if (isset($status['redirect_title']))
 			{
-				$c['redirect_title'] = $status['redirect_title'];
+				$c['redirect_title'] = str_replace('_', ' ', $status['redirect_title']);
 				$c['redirect_pageid'] = isset($status['redirect_pageid']) ? $status['redirect_pageid'] : 0;
 				array_push($redirects, $c);
 			}
@@ -192,17 +192,17 @@ function arrayDiff($arrayA, $arrayB)
 			$found = 0;
 			foreach ($arrayB as $b)
 			{
-				if ($a['title'] == $b['title'])
+				if ($a['title'] === $b['title'])
 				{
 					$found = 1; // Direct
 					break;
 				}
-				if (isset($b['redirect_pageid']) && $b['redirect_pageid'] != 0 && $a['title'] == $b['redirect_title'])
+				if (isset($b['redirect_pageid']) && $b['redirect_pageid'] != 0 && $a['title'] === $b['redirect_title'])
 				{
 					$found = 2; // Indirect
 					break;
 				}
-				if (isset($a['redirect_pageid']) && $a['redirect_pageid'] != 0 && $b['title'] == $a['redirect_title'])
+				if (isset($a['redirect_pageid']) && $a['redirect_pageid'] != 0 && $b['title'] === $a['redirect_title'])
 				{
 					$found = 2; // Indirect
 					break;
@@ -220,7 +220,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 $oldTime = time();
 $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', htmlspecialchars($_GET['name'], ENT_QUOTES)) : '';
-$complete = (isset($_GET['complete']) && $_GET['complete'] == '1') ? true : false;
+$complete = (isset($_GET['complete']) && $_GET['complete'] === '1') ? true : false;
 
 if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
 
@@ -239,7 +239,7 @@ if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak th
 	<body>
 		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" width="105" align="right" /></a></p>
 		<h1>Template linking and transclusion check</h1>
-		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from the template but don't transclude the template.</p>
+		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>
 		<form action="./<?php echo SCRIPTNAME; ?>" method="GET">
 			<table>
 				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="7" required="required" />.wikipedia.org</td></tr>
@@ -327,7 +327,7 @@ if (isset($_GET['lang']))
 					echo "\n<br />" . wpLink($server, $c['title']);
 					foreach ($redirects as $r)
 					{
-						if ($r['redirect_pageid'] == $c['pageid'])
+						if ($r['redirect_pageid'] === $c['pageid'])
 						{
 							echo redirectSymbolL . wpLink($server, $r['title']);
 							break;
