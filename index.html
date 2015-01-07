@@ -15,7 +15,7 @@
 	<body>
 		<p><a href="http://tools.wmflabs.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Wikimedia_labs_logo.svg" width="100" align="right" /></a></p>
 		<h1>Template linking and transclusion check</h1>
-		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from the template but don't transclude the template.</p>
+		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>
 		
 		<table>
 			<tr><th colspan="3"><h2>Parameters</h2></th></tr>
@@ -30,6 +30,17 @@
 		<!--- li>[[toollabs:templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}|Check completeness of transclusions]]</li -->
 		<li>[{{fullurl:toollabs:templatetransclusioncheck|lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}}} Check completeness of transclusions]</li>
 		<li>[http://tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}} Check completeness of transclusions]</li>
+		<li>Sample code for including in the sidebar toolbox:
+		<pre>
+          // Add Chameleon's Template Linking and Transclusion Check to the toolbox
+          if (mw.config.get('wgAction') == 'view') {
+            $(function() {
+              if (mw.config.get('wgNamespaceNumber') == 10) { // 10 == NS_TEMPLATE
+                mw.util.addPortletLink('p-tb', "http://tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name=" + wgPageName, "Transclusion Check");
+              }
+            });
+          }
+		</pre></li>
 		</ul>
 		
 		<h2>Miscellaneous</h2>
