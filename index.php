@@ -21,7 +21,7 @@
 	IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
 	OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
 	OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAAGE.
+	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
@@ -38,10 +38,16 @@ function wpServer($language)
 	return "https://$language.wikipedia.org/";
 }
 
-function wpLink($wpServer, $title, $exists = true)
+function wpLink($wpServer, $title, $exists = true, $noredirect = false)
 {
-	$url = $wpServer . 'wiki/' . str_replace(' ', '_', $title);
-	$urlEdit = $wpServer . 'w/index.php?title=' . str_replace(' ', '_', $title) . '&action=edit';
+	$title_ = str_replace(' ', '_', $title);
+	$urlEdit = $wpServer . 'w/index.php?title=' . $title_ . '&action=edit';
+	$url = '';
+	if ($noredirect) // Do not follow redirects (display redirecting page)
+		$url = $wpServer . 'w/index.php?title=' . $title_ . '&redirect=no';
+	else // Display page normally
+		$url = $wpServer . 'wiki/' . $title_;
+	
 	if ($exists) // Existing page?
 		return '<a href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">edit</a>)';
 	return '<a class ="redlink" href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">create</a>)';
@@ -294,8 +300,9 @@ if (isset($_GET['lang']))
 		{
 			foreach ($notTranscluding as $c)
 			{
-				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
-				if (isset($c['redirect_title']) && $c['redirect_title'] != '')
+				$isRedirect = isset($c['redirect_title']) && $c['redirect_title'] != '';
+				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0, $isRedirect);
+				if ($isRedirect)
 					echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
 			}
 		}
@@ -303,12 +310,12 @@ if (isset($_GET['lang']))
 		
 		if (!empty($redirects))
 		{
-			// Display redirects from template
+			// Display all links to redirects from template
 			echo '<tr><th>&nbsp;</th><th>Links to redirects</th></tr>' . "\n";
 			echo '<tr><td>&nbsp;</td><td><p>Total: ' . count($redirects);
 			foreach ($redirects as $c)
 			{
-				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
+				echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0, true);
 				echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
 			}
 			echo "</p></td></tr>\n";
@@ -329,7 +336,7 @@ if (isset($_GET['lang']))
 					{
 						if ($r['redirect_pageid'] === $c['pageid'])
 						{
-							echo redirectSymbolL . wpLink($server, $r['title']);
+							echo redirectSymbolL . wpLink($server, $r['title'], true, true);
 							break;
 						}
 					}
@@ -343,8 +350,9 @@ if (isset($_GET['lang']))
 			{
 				foreach ($links as $c)
 				{
-					echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0);
-					if (isset($c['redirect_title']) && $c['redirect_title'] != '')
+					$isRedirect = isset($c['redirect_title']) && $c['redirect_title'] != '';
+					echo "\n<br />" . wpLink($server, $c['title'], $c['pageid'] != 0, $isRedirect);
+					if ($isRedirect)
 						echo redirectSymbolR . wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0);
 				}
 			}
