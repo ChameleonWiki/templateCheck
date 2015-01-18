@@ -38,19 +38,25 @@ function wpServer($language)
 	return "https://$language.wikipedia.org/";
 }
 
+function wpLinkUrlEncode($title)
+{
+	return urlencode(str_replace(' ', '_', $title));
+}
+
 function wpLink($wpServer, $title, $exists = true, $noredirect = false)
 {
-	$title_ = str_replace(' ', '_', $title);
-	$urlEdit = $wpServer . 'w/index.php?title=' . $title_ . '&action=edit';
+	$titleHtml = htmlspecialchars($title, ENT_QUOTES);
+	$titleUrl = wpLinkUrlEncode($title);
+	$urlEdit = $wpServer . 'w/index.php?title=' . $titleUrl . '&action=edit';
 	$url = '';
 	if ($noredirect) // Do not follow redirects (display redirecting page)
-		$url = $wpServer . 'w/index.php?title=' . $title_ . '&redirect=no';
+		$url = $wpServer . 'w/index.php?title=' . $titleUrl . '&redirect=no';
 	else // Display page normally
-		$url = $wpServer . 'wiki/' . $title_;
+		$url = $wpServer . 'wiki/' . $titleUrl;
 	
 	if ($exists) // Existing page?
-		return '<a href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">edit</a>)';
-	return '<a class ="redlink" href="' . $url . '">' . $title . '</a> (<a href="' . $urlEdit . '">create</a>)';
+		return '<a href="' . $url . '">' . $titleHtml . '</a> (<a href="' . $urlEdit . '">edit</a>)';
+	return '<a class ="redlink" href="' . $url . '">' . $titleHtml . '</a> (<a href="' . $urlEdit . '">create</a>)';
 }
 
 function wpApiClient($wpServer)
@@ -71,7 +77,7 @@ function wpApiClient($wpServer)
 // Get which articles that transcludes a template
 function transclusionsOf($wpApi, $template)
 {
-	$apiUrl = $wpApi['url'] . '&action=query&prop=transcludedin&tinamespace=0&tilimit=500&titles=' . $template;
+	$apiUrl = $wpApi['url'] . '&action=query&prop=transcludedin&tinamespace=0&tilimit=500&titles=' . wpLinkUrlEncode($template);
 	$json = array();
 	try
 	{
@@ -91,7 +97,7 @@ function transclusionsOf($wpApi, $template)
 // Get which articles a template links to
 function linksFrom($wpApi, $template)
 {
-	$apiUrl = $wpApi['url'] . '&action=query&prop=links&plnamespace=0&pllimit=500&titles=' . $template;
+	$apiUrl = $wpApi['url'] . '&action=query&prop=links&plnamespace=0&pllimit=500&titles=' . wpLinkUrlEncode($template);
 	$json = array();
 	try
 	{
@@ -111,7 +117,7 @@ function linksFrom($wpApi, $template)
 // Get misc status for a wiki page, 0 if not existing
 function pageStatus($db, $namespace, $title)
 {
-	$result = $db->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string($namespace) . "';");
+	$result = $db->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string(str_replace(' ', '_', $namespace)) . "';");
 	if (!isset($result))
 		return array();
 	$row = $result->fetch_array();
@@ -225,7 +231,7 @@ define('redirectSymbolR', ' <span class="redirect">&rarr;</span> ');
 define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 $oldTime = time();
 $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
-$template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', htmlspecialchars($_GET['name'], ENT_QUOTES)) : '';
+$template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', $_GET['name']) : '';
 $complete = (isset($_GET['complete']) && $_GET['complete'] === '1') ? true : false;
 
 if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
@@ -249,7 +255,7 @@ if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak th
 		<form action="./<?php echo SCRIPTNAME; ?>" method="GET">
 			<table>
 				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="7" required="required" />.wikipedia.org</td></tr>
-				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" style="width:200px;" value="<?php echo $template; ?>" required="required" /> (including namespace)</td></tr>
+				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" style="width:200px;" value="<?php echo htmlspecialchars($template, ENT_QUOTES); ?>" required="required" /> (including namespace)</td></tr>
 				<tr><td><label for="complete">Generate complete report:</label></td><td><input type="checkbox" name="complete" value="1"<?php if ($complete) echo ' checked'; ?> /><input type="submit" value="Check!" /></td></tr>
 			</table>
 		</form>
@@ -269,16 +275,15 @@ if (isset($_GET['lang']))
 	
 	$server = wpServer($language);
 	if (!templateExists($db, $template))
-		echo '<p>Template ' . wpLink($server, str_replace('_', ' ', $template), false) . " does not exist.</p>\n";
+		echo '<p>Template ' . wpLink($server, $template, false) . " does not exist.</p>\n";
 	else // Seems like it exist...
 	{
-		$template = str_replace(' ', '_', $template);
 		$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
 		$transclusions = transclusionsOf($wpApi, $template);
 		$links = linksFrom($wpApi, $template);
 		$redirects = checkStatus($db, $links); // Check which links that do not exist
 		
-		echo '<p>Results for ' . wpLink($server, str_replace('_', ' ', $template)) . "</p>\n";		
+		echo '<p>Results for ' . wpLink($server, $template) . "</p>\n";		
 		echo '<table width="90%">' . "\n";
 		echo '<tr><th colspan="2"><h2>Mismatch between transclusions and links</h2></th></tr>' . "\n";
 		echo '<tr><th width="50%">Transclusion but no link</th><th>Link but no transclusion</th></tr>' . "\n";
@@ -361,7 +366,7 @@ if (isset($_GET['lang']))
 		echo "</table>\n";
 	
 		if (!$complete)
-			echo '<p>&nbsp;</p><p><a href="./' . SCRIPTNAME . "?lang=$language&name=$template" . '&complete=1">Complete report...</a></p>' . "\n";
+			echo '<p>&nbsp;</p><p><a href="./' . SCRIPTNAME . "?lang=$language&name=" . wpLinkUrlEncode($template) . '&complete=1">Complete report...</a></p>' . "\n";
 	}
 	$diffTime = time() - $oldTime;
 	echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';
