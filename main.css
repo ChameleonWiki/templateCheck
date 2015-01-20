@@ -90,3 +90,14 @@ a:active {
 .stats {
 	padding-top: 20px;
 }
+
+.info a:link, .info a:visited {
+	color: gray;
+	border-bottom: 1px dotted blue;
+	/*text-decoration: underline dotted blue;*/
+}
+.info a:hover {
+	color: blue;
+	text-decoration: underline;
+	border-bottom: none;
+}

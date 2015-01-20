@@ -1,0 +1,9 @@
+{
+	"name" : "templatetransclusioncheck",
+	"title" : "Template linking and transclusion check",
+	"description" : "Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it. Typical usage is to check navigational templates/navboxes.",
+	"url" : "http://tools.wmflabs.org/templatetransclusioncheck/",
+	"keywords" : "wikipedia, templates, tools",
+	"author" : "Chameleon",
+	"repository" : "https://github.com/ChameleonWiki/templateCheck.git"
+}
