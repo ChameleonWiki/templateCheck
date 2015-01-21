@@ -25,13 +25,15 @@
 */
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
-define('SCRIPTNAME', 'index.php');
 
-require_once('/data/project/jarry-common/public_html/libs/database.php');
+define('scriptLink', './index.php');
+define('cssLink', 'http://tools-static.wmflabs.org/templatetransclusioncheck/main.css');
+define('docLink', 'http://tools-static.wmflabs.org/templatetransclusioncheck/');
 
-// Now give us access to Peachy's helpful HTTP library without necessarily including the whole of Peachy
-require_once('/data/project/jarry-common/public_html/peachy/Includes/Hooks.php');
-require_once('/data/project/jarry-common/public_html/peachy/HTTP.php');
+// External dependencies
+require_once('./dependencies/labs-jarry-common/libs/database.php');
+require_once('./dependencies/Peachy/Includes/Hooks.php');
+require_once('./dependencies/Peachy/HTTP.php');
 
 function wpServer($language)
 {
@@ -47,10 +49,10 @@ function wpLink($wpServer, $title, $exists = true, $noredirect = false)
 {
 	$titleHtml = htmlspecialchars($title, ENT_QUOTES);
 	$titleUrl = wpLinkUrlEncode($title);
-	$urlEdit = $wpServer . 'w/index.php?title=' . $titleUrl . '&action=edit';
+	$urlEdit = $wpServer . 'w/index.php?title=' . $titleUrl . '&amp;action=edit';
 	$url = '';
 	if ($noredirect) // Do not follow redirects (display redirecting page)
-		$url = $wpServer . 'w/index.php?title=' . $titleUrl . '&redirect=no';
+		$url = $wpServer . 'w/index.php?title=' . $titleUrl . '&amp;redirect=no';
 	else // Display page normally
 		$url = $wpServer . 'wiki/' . $titleUrl;
 	
@@ -227,8 +229,6 @@ function arrayDiff($arrayA, $arrayB)
 	return $not;
 }
 
-define('redirectSymbolR', ' <span class="redirect">&rarr;</span> ');
-define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 $oldTime = time();
 $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', $_GET['name']) : '';
@@ -236,27 +236,30 @@ $complete = (isset($_GET['complete']) && $_GET['complete'] === '1') ? true : fal
 
 if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
 
+define('redirectSymbolR', ' <span class="redirect">&rarr;</span> ');
+define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
+
 ?>
-<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
-<html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
 	<head>
 		<title>Template linking and transclusion check</title>
-		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-		<meta http-equiv="Content-Style-Type" content="text/css">
-		<link rel="stylesheet" href="./main.css" type="text/css">
-		<meta name="robots" content="noindex,nofollow">
-		<meta http-equiv="expires" content="0">
-		<meta http-equiv="pragma" content="no-cache">
+		<link rel="stylesheet" href="<?php echo cssLink; ?>" type="text/css" />
+		<meta name="robots" content="noindex,nofollow" />
+		<meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+		<meta http-equiv="content-style-type" content="text/css" />
+		<meta http-equiv="expires" content="0" />
+		<meta http-equiv="pragma" content="no-cache" />
 	</head>
 	<body>
-		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" width="105" align="right" /></a></p>
+		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>
-		<form action="./<?php echo SCRIPTNAME; ?>" method="GET">
+		<form action="<?php echo scriptLink; ?>" method="get">
 			<table>
 				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="7" required="required" />.wikipedia.org</td></tr>
-				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" style="width:200px;" value="<?php echo htmlspecialchars($template, ENT_QUOTES); ?>" required="required" /> (including namespace)</td></tr>
-				<tr><td><label for="complete">Generate complete report:</label></td><td><input type="checkbox" name="complete" value="1"<?php if ($complete) echo ' checked'; ?> /><input type="submit" value="Check!" /></td></tr>
+				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" value="<?php echo htmlspecialchars($template, ENT_QUOTES); ?>" style="width:200px;" required="required" /> (including namespace)</td></tr>
+				<tr><td><label for="complete">Generate complete report:</label></td><td><input type="checkbox" name="complete" id="complete" value="1"<?php if ($complete) echo ' checked="checked"'; ?> /><input type="submit" value="Check!" /></td></tr>
 			</table>
 		</form>
 <?php
@@ -284,9 +287,9 @@ if (isset($_GET['lang']))
 		$redirects = checkStatus($db, $links); // Check which links that do not exist
 		
 		echo '<p>Results for ' . wpLink($server, $template) . "</p>\n";		
-		echo '<table width="90%">' . "\n";
-		echo '<tr><th colspan="2"><h2>Mismatch between transclusions and links</h2></th></tr>' . "\n";
-		echo '<tr><th width="50%">Transclusion but no link</th><th>Link but no transclusion</th></tr>' . "\n";
+		echo '<table style="width: 90%;">' . "\n";
+		echo '<tr><th colspan="2" class="verbose">Mismatch between transclusions and links</th></tr>' . "\n";
+		echo '<tr><th style="width: 50%;">Transclusion but no link</th><th>Link but no transclusion</th></tr>' . "\n";
 		
 		// Any articles that transcludes template but are not linked from template?
 		$notLinked = arrayDiff($transclusions, $links);
@@ -329,7 +332,7 @@ if (isset($_GET['lang']))
 		if ($complete) // Display 
 		{
 			// Template transclusions
-			echo '<tr><th colspan="2"><h2>Complete transclusion and link overview</h2></th></tr>' . "\n";
+			echo '<tr><th colspan="2" class="verbose">Complete transclusion and link overview</th></tr>' . "\n";
 			echo "<tr><th>Transclutions of template</th><th>Links from template</th></tr>\n";
 			echo '<tr><td><p>Transclusion count: ' . count($transclusions);
 			if (!empty($transclusions))
@@ -366,12 +369,14 @@ if (isset($_GET['lang']))
 		echo "</table>\n";
 	
 		if (!$complete)
-			echo '<p>&nbsp;</p><p><a href="./' . SCRIPTNAME . "?lang=$language&name=" . wpLinkUrlEncode($template) . '&complete=1">Complete report...</a></p>' . "\n";
+			echo '<p>&nbsp;</p><p><a href="' . scriptLink . "?lang=$language&name=" . wpLinkUrlEncode($template) . '&complete=1">Complete report...</a></p>' . "\n";
 	}
 	$diffTime = time() - $oldTime;
 	echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';
 }
 ?>
-<p class="info"><a href="./index.html">Tool</a> provided by <a href="http://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="http://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
+<!-- div id="w3c"><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
+<a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="http://www.w3.org/Icons/valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->
+<p class="info"><a href="<?php echo docLink; ?>">Tool</a> provided by <a href="http://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="http://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
 </body>
 </html>

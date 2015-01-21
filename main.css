@@ -1,11 +1,11 @@
 body {
 	background: white;
-	font: normal normal normal 10pt verdana, helvetica, arial, sans-serif;
+	font: normal normal normal 10pt Verdana, Geneva, Helvetica, Arial, sans-serif;
 	color: black;
 	text-align: left;
 	margin: 20px 40px;
 	padding: 0;
-	border: 0 none white;
+	border: none;
 }
 
 h1 {
@@ -15,7 +15,7 @@ h1 {
 	margin-top: 10pt;
 	margin-bottom: 0;
 	font-variant: small-caps;
-	color: maroon;
+	color: #990000;
 }
 
 th, h2 {
@@ -24,7 +24,8 @@ th, h2 {
 	font-size: 10pt;
 }
 
-h2 {
+.verbose {
+	font-size: 12pt;
 	letter-spacing: 0.1em;
 	margin-top: 10pt;
 	margin-bottom: 0;
@@ -47,10 +48,30 @@ p {
 	margin-bottom: 6pt;
 }
 
-img {
-	margin: 0 30px;
+.code, .codeblock {
+	font-family: 'Lucida Console', monospace;
 }
-	
+
+.codeblock {
+	display: block;
+	white-space: pre;
+	margin-top: 0;
+}
+
+img {
+	border: none;
+}
+
+#logo {
+	margin: 0 30px;
+	float: right;
+}
+
+#w3c {
+	margin: 0 30px;
+	float: right;
+}
+
 form {
 	margin-bottom: 20px;
 }
@@ -78,7 +99,7 @@ a:active {
 	color: red;
 }*/
 .redirect {
-	color: green;
+	color: #339966;
 }
 
 .stats, .info {
@@ -93,11 +114,11 @@ a:active {
 
 .info a:link, .info a:visited {
 	color: gray;
-	border-bottom: 1px dotted blue;
-	/*text-decoration: underline dotted blue;*/
+	border-bottom: 1px dotted #006699;
+	/*text-decoration: underline dotted #006699;*/
 }
 .info a:hover {
-	color: blue;
+	color: #006699;
 	text-decoration: underline;
 	border-bottom: none;
 }
