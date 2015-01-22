@@ -26,9 +26,10 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
+define('protocol', isset($_SERVER['HTTPS']) ? 'https' : (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? $_SERVER['HTTP_X_FORWARDED_PROTO'] : 'http'));
 define('scriptLink', './index.php');
-define('cssLink', 'http://tools-static.wmflabs.org/templatetransclusioncheck/main.css');
-define('docLink', 'http://tools-static.wmflabs.org/templatetransclusioncheck/');
+define('cssLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/main.css');
+define('docLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/');
 
 // External dependencies
 require_once('./dependencies/labs-jarry-common/libs/database.php');
@@ -37,7 +38,7 @@ require_once('./dependencies/Peachy/HTTP.php');
 
 function wpServer($language)
 {
-	return "https://$language.wikipedia.org/";
+	return protocol . "://$language.wikipedia.org/";
 }
 
 function wpLinkUrlEncode($title)
@@ -252,7 +253,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 		<meta http-equiv="pragma" content="no-cache" />
 	</head>
 	<body>
-		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
+		<p><a href="<?php echo protocol; ?>://tools.wmflabs.org/"><img src="<?php echo protocol; ?>://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>
 		<form action="<?php echo scriptLink; ?>" method="get">
@@ -266,7 +267,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 
 if (isset($_GET['lang']))
 {
-	$db = NULL;
+	$db = null;
 	try
 	{
 		$db = dbconnect($language . 'wiki-p');
@@ -377,6 +378,6 @@ if (isset($_GET['lang']))
 ?>
 <!-- div id="w3c"><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
 <a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="http://www.w3.org/Icons/valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->
-<p class="info"><a href="<?php echo docLink; ?>">Tool</a> provided by <a href="http://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="http://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
+<p class="info"><a href="<?php echo docLink; ?>">Tool</a> provided by <a href="<?php echo protocol; ?>://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="<?php echo protocol; ?>://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
 </body>
 </html>

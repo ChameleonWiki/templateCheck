@@ -13,7 +13,7 @@
 		</style>
 	</head>
 	<body>
-		<p><a href="http://tools.wmflabs.org/"><img src="https://upload.wikimedia.org/wikipedia/commons/6/60/Wikimedia_labs_logo.svg" alt="Wikimedia Tool Labs logo" width="100" height="100" id="logo" /></a></p>
+		<p><a href="http://tools.wmflabs.org/"><img src="http://upload.wikimedia.org/wikipedia/commons/6/60/Wikimedia_labs_logo.svg" alt="Wikimedia Tool Labs logo" width="100" height="100" id="logo" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it. Typical usage is to check navigational templates/navboxes.</p>
 		<table>
@@ -29,21 +29,28 @@
 			<ul>
 				<!--- li class="code">[[toollabs:templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}|Check completeness of transclusions]]</li -->
 				<li class="code">[{{fullurl:toollabs:templatetransclusioncheck|lang=<b>en</b>&amp;name={{FULLPAGENAMEE}}}} Check completeness of transclusions]</li>
-				<li class="code">[http://tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}} Check completeness of transclusions]</li>
+				<li class="code">[//tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name={{FULLPAGENAMEE}} Check completeness of transclusions]</li>
 			</ul></li>
 			<li>Sample code for including in the sidebar toolbox:<pre class="codeblock">
     // Add Chameleon's Template Linking and Transclusion Check to the toolbox
     if (mw.config.get('wgAction') == 'view') {
       $(function() {
         if (mw.config.get('wgNamespaceNumber') == 10) { // 10 == NS_TEMPLATE
-          mw.util.addPortletLink('p-tb', "http://tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name=" + wgPageName, "Transclusion Check");
+          mw.util.addPortletLink('p-tb', "//tools.wmflabs.org/templatetransclusioncheck/index.php?lang=<b>en</b>&amp;name=" + wgPageName, "Transclusion Check");
         }
       });
     }</pre></li>
+		<li>Some examples on use in Wikipedia (as of January 2015):
+			<ul>
+				<li>English: <a href="http://en.wikipedia.org/wiki/Template:Squad_maintenance">Template:Squad maintenance</a>, <a href="http://en.wikipedia.org/wiki/Template:Roster_maintenance">Template:Roster maintenance</a>.</li>
+				<li>Deutsch: <a href="http://de.wikipedia.org/wiki/Vorlage:Navigationsleiste">Vorlage:Navigationsleiste</a>.</li>
+				<li>Norsk: <a href="http://no.wikipedia.org/wiki/Mal:Spillerstall_vedlikehold">Mal:Spillerstall vedlikehold</a>.</li>
+				<!-- li>Македонски: <a href="http://mk.wikipedia.org/wiki/%D0%A8%D0%B0%D0%B1%D0%BB%D0%BE%D0%BD:Squad_maintenance">Шаблон:Squad maintenance</a>.</li -->
+			</ul></li>
 		</ul>
 		<h2 class="verbose">Miscellaneous</h2>
 		<ul>
-		<li>Tool is available at <a href="http://tools.wmflabs.org/templatetransclusioncheck/">http://tools.wmflabs.org/templatetransclusioncheck/</a>.</li>
+		<li>Tool is available at <a href="http://tools.wmflabs.org/templatetransclusioncheck/">http://tools.wmflabs.org/templatetransclusioncheck/</a> and <a href="https://tools.wmflabs.org/templatetransclusioncheck/">https://tools.wmflabs.org/templatetransclusioncheck/</a>.</li>
 		<li>Source is available at <a href="http://github.com/ChameleonWiki/templateCheck">GitHub</a>.</li>
 		</ul>
 		<div id="w3c"><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
