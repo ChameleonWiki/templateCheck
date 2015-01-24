@@ -31,8 +31,10 @@ define('scriptLink', './index.php');
 define('cssLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/main.css');
 define('docLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/');
 
+// Dependencies
+require_once('./dependencies/database.php');
+
 // External dependencies
-require_once('./dependencies/labs-jarry-common/libs/database.php');
 require_once('./dependencies/Peachy/Includes/Hooks.php');
 require_once('./dependencies/Peachy/HTTP.php');
 
@@ -124,6 +126,7 @@ function pageStatus($db, $namespace, $title)
 	if (!isset($result))
 		return array();
 	$row = $result->fetch_array();
+	$result->close();
 	if (!isset($row))
 		return array();
 	$status['pageid'] = $row['page_id'];
@@ -133,6 +136,7 @@ function pageStatus($db, $namespace, $title)
 		if (isset($result))
 		{
 			$row = $result->fetch_array();
+			$result->close();
 			if (isset($row))
 			{
 				// Might also want namespace for redirect target
@@ -265,12 +269,12 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 		</form>
 <?php
 
-if (isset($_GET['lang']))
+if (isset($_GET['lang']) && $template != '')
 {
 	$db = null;
 	try
 	{
-		$db = dbconnect($language . 'wiki-p');
+		$db = new Database($language . 'wiki-p');
 	}
 	catch (Exception $e)
 	{
@@ -285,7 +289,8 @@ if (isset($_GET['lang']))
 		$wpApi = wpApiClient($server) or die("Oops, sorry: Couldn't get the API client");
 		$transclusions = transclusionsOf($wpApi, $template);
 		$links = linksFrom($wpApi, $template);
-		$redirects = checkStatus($db, $links); // Check which links that do not exist
+		unset($wpApi);
+		$redirects = checkStatus($db, $links); // Check which links that do not exist		
 		
 		echo '<p>Results for ' . wpLink($server, $template) . "</p>\n";		
 		echo '<table style="width: 90%;">' . "\n";
@@ -370,8 +375,9 @@ if (isset($_GET['lang']))
 		echo "</table>\n";
 	
 		if (!$complete)
-			echo '<p>&nbsp;</p><p><a href="' . scriptLink . "?lang=$language&name=" . wpLinkUrlEncode($template) . '&complete=1">Complete report...</a></p>' . "\n";
+			echo '<p>&nbsp;</p><p><a href="' . scriptLink . "?lang=$language&amp;name=" . wpLinkUrlEncode($template) . '&amp;complete=1">Complete report...</a></p>' . "\n";
 	}
+	unset($db); // Close db
 	$diffTime = time() - $oldTime;
 	echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';
 }
