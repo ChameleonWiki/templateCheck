@@ -33,6 +33,7 @@ define('docLink', protocol . '://tools-static.wmflabs.org/templatetransclusionch
 
 // Dependencies
 require_once('./dependencies/database.php');
+require_once('./dependencies/maintenanceNotice.php');
 
 // External dependencies
 require_once('./dependencies/Peachy/Includes/Hooks.php');
@@ -257,6 +258,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 		<meta http-equiv="pragma" content="no-cache" />
 	</head>
 	<body>
+		<?php maintenanceNotice(); ?>
 		<p><a href="<?php echo protocol; ?>://tools.wmflabs.org/"><img src="<?php echo protocol; ?>://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
 		<h1>Template linking and transclusion check</h1>
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>

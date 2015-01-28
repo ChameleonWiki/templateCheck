@@ -1,0 +1,5 @@
+{
+	"from" : "2015-01-28 09:00:00",
+	"to"   : "2015-01-29 18:00:00",
+	"text" : "Due to unscheduled maintenance of the Wikimedia Labs infrastructure this tool might suffer temporary outages/instability until the maintenance has finished. Sorry for the inconvenience.<br />For details please check <a href=\"http://lists.wikimedia.org/pipermail/labs-l/2015-January/003279.html\">[Labs-l] Rolling reboots today</a> and <a href=\"https://lists.wikimedia.org/pipermail/labs-l/2015-January/003288.html\">[Labs-l] Rolling reboots today (finished)</a>."
+}
