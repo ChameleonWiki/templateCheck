@@ -32,7 +32,7 @@
 */
 class MaintenanceNotice
 {
-	public $message = array();
+	private $message = array();
 	
 	private function jsonDecode($jsonStr)
 	{
@@ -54,29 +54,42 @@ class MaintenanceNotice
 			$this->jsonDecode($jsonStr);
 	}
 	
-	public function display()
+	public function active()
 	{
 		if (!$this->message['text'])
-			return; // No text: Nothing to display
-		
+			return false; // No text: Nothing to display
 		$now = time();
 		if ($this->message['from'] && $this->message['from'] > $now)
-			return; // Not yet
+			return false; // Not yet
 		if ($this->message['to'] && $this->message['to'] < $now)
-			return; // Not anymore
-		
+			return false; // Not anymore
+		return true;
+	}
+	
+	public function display()
+	{
 		// Display message
 		echo '<div style="border: 2px solid orange; padding: .3em; margin-bottom: 2em;"><p><span style="font-weight: bold;">Maintenance notice:</span>';
 		if ($this->message['from']) // Display issued time
-			echo ' <span style="font-size: 8pt;"> (' . date('D, d M Y H:i:s T', $this->message['from']) . ')</span>';
+		{
+			echo ' <span style="font-size: 8pt;"> (' . date('D, d M Y H:i:s T', $this->message['from']);
+			if ($this->message['to']) // Display expected end time?
+				echo ' &ndash; ' . date('D, d M Y H:i:s T', $this->message['to']);
+			echo ')</span>';
+		}
 		echo '<br />' . $this->message['text'] . '</p></div>' . "\n";
+	}
+	
+	public static function displayMessage($file = null)
+	{
+		$notice = new MaintenanceNotice($file ? $file : './maintenanceNotice.json');
+		if ($notice->active())
+			$notice->display();
+		unset($notice);
 	}
 }
 
-function maintenanceNotice(
-)
+function maintenanceNotice($file = null)
 {
-	$notice = new MaintenanceNotice('./maintenanceNotice.json');
-	$notice->display();
-	unset($notice);
+	MaintenanceNotice::displayMessage($file);
 }
