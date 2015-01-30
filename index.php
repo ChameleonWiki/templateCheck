@@ -264,7 +264,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 		<p>Checks and reports which articles that transcludes a template that are not linked from the template, and which articles that are linked from a template but don't transclude it.</p>
 		<form action="<?php echo scriptLink; ?>" method="get">
 			<table>
-				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="7" required="required" />.wikipedia.org</td></tr>
+				<tr><td><label for="lang">Language:</label></td><td><input type="text" name="lang" id="lang" value="<?php echo $language; ?>" style="width:80px;" maxlength="8" required="required" />.wikipedia.org</td></tr>
 				<tr><td><label for="name">Template name:</label></td><td><input type="text" name="name" id="name" value="<?php echo htmlspecialchars($template, ENT_QUOTES); ?>" style="width:200px;" required="required" /> (including namespace)</td></tr>
 				<tr><td><label for="complete">Generate complete report:</label></td><td><input type="checkbox" name="complete" id="complete" value="1"<?php if ($complete) echo ' checked="checked"'; ?> /><input type="submit" value="Check!" /></td></tr>
 			</table>

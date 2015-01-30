@@ -29,6 +29,7 @@ class Database extends mysqli
 		// Connect using user credentials (local-toolname => /data/project/toolname/replica.my.cnf)
 		$mycnf = parse_ini_file('/data/project/' . substr(get_current_user(), 6) . '/replica.my.cnf');
 		$cluster = (preg_match('/[-_]p$/', $database)) ? substr($database, 0, -2) : $database;
+		$cluster = str_replace('-', '_', $cluster); // needed for be-x-old.wikipedia.org (db host name be_x_old.labsdb)
 		
 		// Connect to server
 		parent::__construct($cluster . '.labsdb', $mycnf['user'], $mycnf['password']); // mysqli CTor
