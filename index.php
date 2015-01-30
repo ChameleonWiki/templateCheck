@@ -240,7 +240,7 @@ $language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_G
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', $_GET['name']) : '';
 $complete = (isset($_GET['complete']) && $_GET['complete'] === '1') ? true : false;
 
-if(!preg_match('/^[a-z-]{2,7}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
+if(!preg_match('/^[a-z-]{2,8}$/', $language)) die("Oops, sorry: I don't speak that language..."); // Safety precaution
 
 define('redirectSymbolR', ' <span class="redirect">&rarr;</span> ');
 define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
