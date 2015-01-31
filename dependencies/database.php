@@ -24,21 +24,21 @@
 
 class Database extends mysqli
 {
-	public function __construct($database)
+	public function __construct($database_)
 	{		
 		// Connect using user credentials (local-toolname => /data/project/toolname/replica.my.cnf)
 		$mycnf = parse_ini_file('/data/project/' . substr(get_current_user(), 6) . '/replica.my.cnf');
+		$database = str_replace('-', '_', $database_); // needed for be-x-old.wikipedia.org (db host name be_x_old.labsdb)
 		$cluster = (preg_match('/[-_]p$/', $database)) ? substr($database, 0, -2) : $database;
-		$cluster = str_replace('-', '_', $cluster); // needed for be-x-old.wikipedia.org (db host name be_x_old.labsdb)
 		
 		// Connect to server
 		parent::__construct($cluster . '.labsdb', $mycnf['user'], $mycnf['password']); // mysqli CTor
 		unset($mycnf);
-		if($this->connect_error)
+		if($this->connect_error) // One possible error is wrong db host name. Check /etc/hosts for match
 			throw new Exception('Database server login failed. This is probably a temporary problem with the server and will be fixed soon. The server returned error code ' . $this->connect_errno . '.');
 
 		// Select database
-		if(($this->select_db(str_replace('-', '_', $database))) === false)
+		if(($this->select_db($database)) === false)
 			throw new Exception('Database selection failed. This is probably a temporary problem with the server and will be fixed soon.');
 	}
 	
