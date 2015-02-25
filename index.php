@@ -123,6 +123,7 @@ function linksFrom($wpApi, $template)
 // Get misc status for a wiki page, 0 if not existing
 function pageStatus($db, $namespace, $title)
 {
+	static $recursionLevel = 0;
 	$result = $db->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string(str_replace(' ', '_', $namespace)) . "';");
 	if (!isset($result))
 		return array();
@@ -131,7 +132,7 @@ function pageStatus($db, $namespace, $title)
 	if (!isset($row))
 		return array();
 	$status['pageid'] = $row['page_id'];
-	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] === '1')
+	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] === '1' && $recursionLevel === 0)
 	{
 		$result = $db->query("SELECT rd_title FROM redirect WHERE rd_from='" . $db->real_escape_string($status['pageid']) . "';");
 		if (isset($result))
@@ -142,7 +143,9 @@ function pageStatus($db, $namespace, $title)
 			{
 				// Might also want namespace for redirect target
 				$status['redirect_title'] = $row['rd_title'];
+				$recursionLevel = 1;
 				$status['redirect_pageid'] = pageId($db, $namespace, $status['redirect_title']); // Recursive...
+				$recursionLevel = 0;
 			}
 		}
 	}
