@@ -102,7 +102,7 @@ a:active {
 	color: #339966;
 }
 
-.stats, .info {
+.stats, .info, .int-promobox, .int-dashboardbacklink, .int-promobox small {
 	color: gray;
 	font-size: 8pt;
 	margin-bottom: 0;
@@ -112,12 +112,12 @@ a:active {
 	padding-top: 20px;
 }
 
-.info a:link, .info a:visited {
+.info a:link, .info a:visited, .int-promobox a:link, .int-promobox a:visited, .int-dashboardbacklink a:link, .int-dashboardbacklink a:visited {
 	color: gray;
 	border-bottom: 1px dotted #006699;
 	/*text-decoration: underline dotted #006699;*/
 }
-.info a:hover {
+.info a:hover, .int-promobox a:hover, .int-dashboardbacklink a:hover {
 	color: #006699;
 	text-decoration: underline;
 	border-bottom: none;
