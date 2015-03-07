@@ -25,6 +25,7 @@
 /*
 	Example maintenanceNotice.json:
 {
+	"displayFrom" : "2015-01-27 09:00:00",
 	"from" : "2015-01-28 09:00:00",
 	"to"   : "2015-01-29 18:00:00",
 	"text" : "Due to unscheduled maintenance of the Wikimedia Labs infrastructure this tool might suffer temporary outages/instability until the maintenance has finished. Sorry for the inconvenience.<br />For details please check <a href=\"http://lists.wikimedia.org/pipermail/labs-l/2015-January/003279.html\">[Labs-l] Rolling reboots today</a> and <a href=\"https://lists.wikimedia.org/pipermail/labs-l/2015-January/003288.html\">[Labs-l] Rolling reboots today (finished)</a>."
@@ -39,8 +40,9 @@ class MaintenanceNotice
 		$json = json_decode($jsonStr, true);
 		if ($json)
 		{
-			$this->message['from'] = $json['from'] && $json['from'] != '0' ? strtotime($json['from']) : null;
-			$this->message['to'] = $json['to'] && $json['to'] != '0' ? strtotime($json['to']) : null;
+			$this->message['from'] = isset($json['from']) && $json['from'] != '0' ? strtotime($json['from']) : null;
+			$this->message['displayFrom'] = isset($json['displayFrom']) ? strtotime($json['displayFrom']) : $this->message['from'];
+			$this->message['to'] = isset($json['to']) && $json['to'] != '0' ? strtotime($json['to']) : null;
 			$this->message['text'] = $json['text'];
 			return true;
 		}
@@ -56,10 +58,10 @@ class MaintenanceNotice
 	
 	public function active()
 	{
-		if (!$this->message['text'])
+		if (!isset($this->message['text']) || $this->message['text'] == '')
 			return false; // No text: Nothing to display
 		$now = time();
-		if ($this->message['from'] && $this->message['from'] > $now)
+		if ($this->message['displayFrom'] && $this->message['displayFrom'] > $now)
 			return false; // Not yet
 		if ($this->message['to'] && $this->message['to'] < $now)
 			return false; // Not anymore
