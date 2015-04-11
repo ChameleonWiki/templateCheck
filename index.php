@@ -43,7 +43,7 @@ require_once('./dependencies/Peachy/HTTP.php');
 require_once('/data/project/intuition/src/Intuition/ToolStart.php');
 
 $I18N = new Intuition(array('domain' => i18nDomain));
-//$I18N->loadTextdomainFromFile('./Templatetransclusioncheck.i18n.php', i18nDomain);
+$I18N->loadTextdomainFromFile('./Templatetransclusioncheck.i18n.php', i18nDomain);
 
 function wpServer($language)
 {
@@ -87,44 +87,70 @@ function wpApiClient($wpServer)
 	return $wpApi;
 }
 
+function continueStr($jsonResult = null)
+{
+	if (!$jsonResult)
+		return '&continue='; // Initital
+	if (array_key_exists('batchcomplete', $jsonResult) || !array_key_exists('continue', $jsonResult))
+		return false; // Finished
+	$continue = '';
+	foreach ($jsonResult['continue'] as $key => $value)
+		$continue .= '&' . $key . '=' . $value;
+	return $continue; // Intermediate
+}
+
 // Get which articles that transcludes a template
 function transclusionsOf($wpApi, $template)
 {
-	$apiUrl = $wpApi['url'] . '&action=query&prop=transcludedin&tinamespace=0&tilimit=500&titles=' . wpLinkUrlEncode($template);
-	$json = array();
-	try
+	$result = array();
+	$continue = continueStr();
+	while ($continue)
 	{
-		$json = json_decode($wpApi['http']->get($apiUrl), true);
+		$apiUrl = $wpApi['url'] . '&action=query&prop=transcludedin&tinamespace=0&tilimit=500' . $continue. '&titles=' . wpLinkUrlEncode($template);
+		$json = array();
+		try
+		{
+			$json = json_decode($wpApi['http']->get($apiUrl), true);
+		}
+		catch (Exception $e)
+		{
+			die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
+		}
+		if ($json == false || count($json) == 0) return $result;
+		
+		$tmp = current($json['query']['pages']);
+		if (array_key_exists('transcludedin', $tmp))
+			$result = array_merge($result, $tmp['transcludedin']);
+		$continue = continueStr($json);
 	}
-	catch (Exception $e)
-	{
-		die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
-	}
-	if ($json == false || count($json) == 0) return array();
-	
-	$tmp = current($json['query']['pages']);
-	if (!array_key_exists('transcludedin', $tmp)) return array();
-	return $tmp['transcludedin'];
+	return $result;
 }
 
 // Get which articles a template links to
 function linksFrom($wpApi, $template)
 {
-	$apiUrl = $wpApi['url'] . '&action=query&prop=links&plnamespace=0&pllimit=500&titles=' . wpLinkUrlEncode($template);
-	$json = array();
-	try
+	$result = array();
+	$continue = continueStr();
+	while ($continue)
 	{
-		$json = json_decode($wpApi['http']->get($apiUrl), true);
-	}
-	catch (Exception $e)
-	{
-		die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
-	}
-	if($json == false || count($json) == 0) return array();
+		$apiUrl = $wpApi['url'] . '&action=query&prop=links&plnamespace=0&pllimit=500' . $continue . '&titles=' . wpLinkUrlEncode($template);
+		$json = array();
+		try
+		{
+			$json = json_decode($wpApi['http']->get($apiUrl), true);
+		}
+		catch (Exception $e)
+		{
+			die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
+		}
+		if($json == false || count($json) == 0) return $result;
 
-	$tmp = current($json['query']['pages']);
-	if (!array_key_exists('links', $tmp)) return array();
-	return $tmp['links'];
+		$tmp = current($json['query']['pages']);
+		if (array_key_exists('links', $tmp))
+			$result = array_merge($result, $tmp['links']);
+		$continue = continueStr($json);
+	}
+	return $result;
 }
 
 // Get misc status for a wiki page, 0 if not existing
@@ -398,6 +424,6 @@ if (isset($_GET['lang']) && $template != '')
 <!-- div id="w3c"><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
 <a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="http://www.w3.org/Icons/valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->
 <p class="info"><a href="<?php echo docLink; ?>">Tool</a> is provided by <a href="<?php echo protocol; ?>://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="<?php echo protocol; ?>://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
-<?php echo $I18N->getFooterLine(i18nDomain); ?>
+<?php /*echo $I18N->getFooterLine(i18nDomain);*/ ?>
 </body>
 </html>
