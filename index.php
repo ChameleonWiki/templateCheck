@@ -246,7 +246,7 @@ function arrayDiff($arrayA, $arrayB)
 }
 
 $oldTime = $_SERVER['REQUEST_TIME'] ? $_SERVER['REQUEST_TIME'] : time();
-$language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : explode('-', $I18N->getLang());
+$language = (isset($_GET['lang']) && $_GET['lang'] != '') ? htmlspecialchars($_GET['lang']) : 'no';
 $template = (isset($_GET['name']) && $_GET['name'] != '') ? str_replace('_', ' ', $_GET['name']) : '';
 $complete = (isset($_GET['complete']) && $_GET['complete'] === '1') ? true : false;
 
