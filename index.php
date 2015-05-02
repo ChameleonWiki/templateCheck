@@ -34,12 +34,12 @@ define('docLink', protocol . '://tools-static.wmflabs.org/templatetransclusionch
 define('i18nDomain', 'templatetransclusioncheck');
 
 // Dependencies
-require_once('./dependencies/database.php');
+require_once('./dependencies/wpApiPage.php');
+require_once('./dependencies/wpNamespaces.php');
 require_once('./dependencies/maintenanceNotice.php');
+require_once('./databaseQueries.php');
 
 // External dependencies
-require_once('./dependencies/Peachy/Includes/Hooks.php');
-require_once('./dependencies/Peachy/HTTP.php');
 require_once('/data/project/intuition/src/Intuition/ToolStart.php');
 
 $I18N = new Intuition(array('domain' => i18nDomain));
@@ -52,7 +52,7 @@ function wpServer($language)
 
 function wpLinkUrlEncode($title)
 {
-	return urlencode(str_replace(' ', '_', $title));
+	return WikiAPI::linkUrlEncode($title);
 }
 
 function wpLink($wpServer, $title, $exists = true, $noredirect = false)
@@ -69,166 +69,6 @@ function wpLink($wpServer, $title, $exists = true, $noredirect = false)
 	if ($exists) // Existing page?
 		return '<a href="' . $url . '">' . $titleHtml . '</a> ' . _g('parentheses', array('variables' => array('<a href="' . $urlEdit . '">' . _html('link-edit') . '</a>')));
 	return '<a class ="redlink" href="' . $url . '">' . $titleHtml . '</a> ' . _g('parentheses', array('variables' => array('<a href="' . $urlEdit . '">' . _html('link-create') . '</a>')));
-}
-
-
-function wpApiClient($wpServer)
-{
-	$wpApi = array();
-	try
-	{
-		$wpApi['http'] = HTTP::getDefaultInstance();
-	}
-	catch (Exception $e)
-	{
-		die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
-	}
-	$wpApi['url'] = $wpServer . 'w/api.php?format=json&continue=';
-	return $wpApi;
-}
-
-function continueStr($jsonResult = null)
-{
-	if (!$jsonResult)
-		return '&continue='; // Initital
-	if (array_key_exists('batchcomplete', $jsonResult) || !array_key_exists('continue', $jsonResult))
-		return false; // Finished
-	$continue = '';
-	foreach ($jsonResult['continue'] as $key => $value)
-		$continue .= '&' . $key . '=' . $value;
-	return $continue; // Intermediate
-}
-
-// Get which articles that transcludes a template
-function transclusionsOf($wpApi, $template)
-{
-	$result = array();
-	$continue = continueStr();
-	while ($continue)
-	{
-		$apiUrl = $wpApi['url'] . '&action=query&prop=transcludedin&tinamespace=0&tilimit=500' . $continue. '&titles=' . wpLinkUrlEncode($template);
-		$json = array();
-		try
-		{
-			$json = json_decode($wpApi['http']->get($apiUrl), true);
-		}
-		catch (Exception $e)
-		{
-			die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
-		}
-		if ($json == false || count($json) == 0) return $result;
-		
-		$tmp = current($json['query']['pages']);
-		if (array_key_exists('transcludedin', $tmp))
-			$result = array_merge($result, $tmp['transcludedin']);
-		$continue = continueStr($json);
-	}
-	return $result;
-}
-
-// Get which articles a template links to
-function linksFrom($wpApi, $template)
-{
-	$result = array();
-	$continue = continueStr();
-	while ($continue)
-	{
-		$apiUrl = $wpApi['url'] . '&action=query&prop=links&plnamespace=0&pllimit=500' . $continue . '&titles=' . wpLinkUrlEncode($template);
-		$json = array();
-		try
-		{
-			$json = json_decode($wpApi['http']->get($apiUrl), true);
-		}
-		catch (Exception $e)
-		{
-			die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
-		}
-		if($json == false || count($json) == 0) return $result;
-
-		$tmp = current($json['query']['pages']);
-		if (array_key_exists('links', $tmp))
-			$result = array_merge($result, $tmp['links']);
-		$continue = continueStr($json);
-	}
-	return $result;
-}
-
-// Get misc status for a wiki page, 0 if not existing
-function pageStatus($db, $namespace, $title)
-{
-	static $recursionLevel = 0;
-	$result = $db->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $db->real_escape_string(str_replace(' ', '_', $title)) . "' AND page_namespace='" . $db->real_escape_string(str_replace(' ', '_', $namespace)) . "';");
-	if (!isset($result))
-		return array();
-	$row = $result->fetch_array();
-	$result->close();
-	if (!isset($row))
-		return array();
-	$status['pageid'] = $row['page_id'];
-	if (isset($row['page_is_redirect']) && $row['page_is_redirect'] === '1' && $recursionLevel === 0)
-	{
-		$result = $db->query("SELECT rd_title FROM redirect WHERE rd_from='" . $db->real_escape_string($status['pageid']) . "';");
-		if (isset($result))
-		{
-			$row = $result->fetch_array();
-			$result->close();
-			if (isset($row))
-			{
-				// Might also want namespace for redirect target
-				$status['redirect_title'] = $row['rd_title'];
-				$recursionLevel = 1;
-				$status['redirect_pageid'] = pageId($db, $namespace, $status['redirect_title']); // Recursive...
-				$recursionLevel = 0;
-			}
-		}
-	}
-	return $status;
-}
-
-// Get pageid for a wiki page, 0 if not existing
-function pageId($db, $namespace, $title)
-{
-	$status = pageStatus($db, $namespace, $title);
-	if (!isset($status['pageid']))
-		return 0;
-	return $status['pageid'];
-}
-
-// Do the articles the template link to exist?
-function checkStatus($db, &$links)
-{
-	$redirects = array();
-	foreach ($links as &$c)
-	{
-		$status = pageStatus($db, $c['ns'], $c['title']);
-		if (!isset($status['pageid']))
-			$c['pageid'] = 0;
-		else
-		{
-			$c['pageid'] = $status['pageid'];
-			if (isset($status['redirect_title']))
-			{
-				$c['redirect_title'] = str_replace('_', ' ', $status['redirect_title']);
-				$c['redirect_pageid'] = isset($status['redirect_pageid']) ? $status['redirect_pageid'] : 0;
-				array_push($redirects, $c);
-			}
-		}
-	}
-	return $redirects;
-}
-
-// Check if template exists
-function templateExists($db, $template)
-{
-	$templateName = $template;
-	$namespaceDelimiter = strpos($template, ':');
-	if ($namespaceDelimiter > 0)
-	{
-		$templateName = substr($templateName, $namespaceDelimiter + 1);
-		if (isset($templateName) && $templateName != '')
-			return pageId($db, 10, $templateName) != 0;
-	}
-	return false;
 }
 
 // Returns a list of titles that exists in arrayA but not in arrayB
@@ -309,26 +149,31 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 
 if (isset($_GET['lang']) && $template != '')
 {
+	$server = wpServer($language);
+	$wpApi = new WikiPageAPI($server) or die($I18N->msg('error-api')); // "Couldn't get the API client."
 	$db = null;
 	try
 	{
-		$db = new Database($language . 'wiki-p');
+		$db = new DatabaseSpecialized($language . 'wiki-p');
 	}
 	catch (Exception $e)
 	{
 		die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
 	}
 	
-	$server = wpServer($language);
-	if (!templateExists($db, $template))
-		echo '<p>' . _html('feedback-template-missing', array('variables' => array(wpLink($server, $template, false)), 'raw-variables' => true)) . "</p>\n"; // 'Template $1 does not exist.'
+	if (!$db->templateExists($template))
+	{
+		// Couldnt get info from db, check with api
+		if ($wpApi->pageId($template) != 0) // Template is available using the wp api (but not the db). This might be a temporary db issue.
+			echo '<p>Template ' . wpLink($server, $template) . ' seems to exists, but it is not available from the database. This might be a temporary database issue. Database used is ' . $db->host_info . ".</p>\n";
+		else // Not available either from db or api
+			echo '<p>' . _html('feedback-template-missing', array('variables' => array(wpLink($server, $template, false)), 'raw-variables' => true)) . "</p>\n"; // 'Template $1 does not exist.'
+	}
 	else // Seems like it exist...
 	{
-		$wpApi = wpApiClient($server) or die($I18N->msg('error-api')); // "Couldn't get the API client."
-		$transclusions = transclusionsOf($wpApi, $template);
-		$links = linksFrom($wpApi, $template);
-		unset($wpApi);
-		$redirects = checkStatus($db, $links); // Check which links that do not exist		
+		$transclusions = $wpApi->transclusionsOf($template);
+		$links = $wpApi->linksFrom($template);
+		$redirects = $db->checkStatus($links); // Check which links that do not exist		
 		
 		echo '<p>' . _html('feedback-result', array('variables' => array(wpLink($server, $template)), 'raw-variables' => true)) . "</p>\n"; // 'Results for $1'
 		echo '<table style="width: 90%;">' . "\n";
@@ -416,6 +261,7 @@ if (isset($_GET['lang']) && $template != '')
 			echo '<p>&nbsp;</p><p><a href="' . scriptLink . "?lang=$language&amp;name=" . wpLinkUrlEncode($template) . '&amp;complete=1">' . _html('link-complete') ."</a></p>\n";
 	}
 	unset($db); // Close db
+	unset($wpApi);
 	$diffTime = time() - $oldTime;
 	//echo '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>';
 	echo '<p class="stats">' . _html('footer-stats', array('variables' => array($I18N->dateFormatted('%a, %d %b %Y %T %Z'), $diffTime))) . '</p>';

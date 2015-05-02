@@ -50,10 +50,13 @@ class MaintenanceNotice
 	}
 	
 	public function __construct($file)
-	{	
-		$jsonStr = file_get_contents($file);
-		if ($jsonStr)
-			$this->jsonDecode($jsonStr);
+	{
+		if (file_exists($file))
+		{
+			$jsonStr = file_get_contents($file);
+			if ($jsonStr)
+				$this->jsonDecode($jsonStr);
+		}
 	}
 	
 	public function active()
@@ -82,16 +85,19 @@ class MaintenanceNotice
 		echo '<br />' . $this->message['text'] . '</p></div>' . "\n";
 	}
 	
-	public static function displayMessage($file = null)
+	public static function displayMessage($checkGlobal = true, $file = null)
 	{
-		$notice = new MaintenanceNotice($file ? $file : './maintenanceNotice.json');
-		if ($notice->active())
+		$useFile = $file != null ? $file : './maintenanceNotice.json'; // Either a tool supplied file name or a tool local file named maintenanceNotice.json
+		if ($checkGlobal && !file_exists($useFile))
+			$useFile = '/data/project/templatetransclusioncheck/public_html/maintenanceNotice.json'; // Local file does not exist, try the "global" maintenanceNotice.json
+		$notice = new MaintenanceNotice($useFile);
+		if ($notice && $notice->active())
 			$notice->display();
 		unset($notice);
 	}
 }
 
-function maintenanceNotice($file = null)
+function maintenanceNotice($checkGlobal = true, $file = null)
 {
-	MaintenanceNotice::displayMessage($file);
+	MaintenanceNotice::displayMessage($checkGlobal, $file);
 }

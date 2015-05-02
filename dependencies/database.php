@@ -24,28 +24,60 @@
 
 class Database extends mysqli
 {
-	public function __construct($database_)
+	private $hostName = null;
+	private $databaseName = null;
+		
+	public function __construct(
+		$database,
+		$charset = 'utf8' // utf8, utf8mb4, latin1, binary etc
+	)
 	{		
 		// Connect using user credentials (local-toolname => /data/project/toolname/replica.my.cnf)
 		$mycnf = parse_ini_file('/data/project/' . substr(get_current_user(), 6) . '/replica.my.cnf');
-		$database = str_replace('-', '_', $database_); // needed for be-x-old.wikipedia.org (db host name be_x_old.labsdb)
-		$cluster = (preg_match('/[-_]p$/', $database)) ? substr($database, 0, -2) : $database;
+		$this->databaseName = str_replace('-', '_', $database); // needed for be-x-old.wikipedia.org (db host name be_x_old.labsdb)
+		$this->hostName = (preg_match('/[-_]p$/', $this->databaseName)) ? substr($this->databaseName, 0, -2) : $this->databaseName;
 		
 		// Connect to server
-		parent::__construct($cluster . '.labsdb', $mycnf['user'], $mycnf['password']); // mysqli CTor
+		parent::__construct($this->hostName . '.labsdb', $mycnf['user'], $mycnf['password']); // mysqli CTor
 		unset($mycnf);
 		if($this->connect_error) // One possible error is wrong db host name. Check /etc/hosts for match
 			throw new Exception('Database server login failed. This is probably a temporary problem with the server and will be fixed soon. The server returned error code ' . $this->connect_errno . '.');
 
 		// Select database
-		if(($this->select_db($database)) === false)
+		if(($this->select_db($this->databaseName)) === false)
 			throw new Exception('Database selection failed. This is probably a temporary problem with the server and will be fixed soon.');
+			
+		if ($charset && $charset != '')
+		{
+			if (!$this->set_charset($charset))
+				throw new Exception('Error loading character set "' . $charset . '": ' . $this->error);
+		}
 	}
 	
 	public function __destruct()
 	{
+		unset($hostName);
+		unset($databaseName);
 		if ($this->thread_id)
 			$this->kill($this->thread_id); // Kill connection
 		$this->close(); // Close connection
+	}
+	
+	public function hostName()
+	{
+		return $this->hostName;
+	}
+	
+	public function databaseName()
+	{
+		return $this->databaseName;
+	}
+	
+	public function wiki_escape_string( // Wiki variant (for page names etc) of real_escape_string
+		$escapeStr
+	)
+	{
+		$esc = str_replace(' ', '_', $escapeStr);
+		return $this->real_escape_string($esc);
 	}
 }
