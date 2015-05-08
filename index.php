@@ -43,7 +43,7 @@ require_once('./databaseQueries.php');
 require_once('/data/project/intuition/src/Intuition/ToolStart.php');
 
 $I18N = new Intuition(array('domain' => i18nDomain));
-$I18N->loadTextdomainFromFile('./Templatetransclusioncheck.i18n.php', i18nDomain);
+$I18N->loadMessageFile(i18nDomain, 'en', 'en.json');
 
 function wpServer($language)
 {
@@ -150,7 +150,7 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 if (isset($_GET['lang']) && $template != '')
 {
 	$server = wpServer($language);
-	$wpApi = new WikiPageAPI($server) or die($I18N->msg('error-api')); // "Couldn't get the API client."
+	$wpApi = new WikiPageAPI($server) or die("Couldn't get the API client.");
 	$db = null;
 	try
 	{
@@ -158,14 +158,14 @@ if (isset($_GET['lang']) && $template != '')
 	}
 	catch (Exception $e)
 	{
-		die($I18N->msg('error-exception') . ' ' . $e->getMessage()); // 'Caught an exception:'
+		die('Caught an exception: ' . $e->getMessage());
 	}
 	
 	if (!$db->templateExists($template))
 	{
 		// Couldnt get info from db, check with api
 		if ($wpApi->pageId($template) != 0) // Template is available using the wp api (but not the db). This might be a temporary db issue.
-			echo '<p>Template ' . wpLink($server, $template) . ' seems to exists, but it is not available from the database. This might be a temporary database issue. Database used is ' . $db->host_info . ".</p>\n";
+			echo '<p>' . _html('feedback-template-noaccess', array('variables' => array(wpLink($server, $template, false), $db->host_info), 'raw-variables' => true)) . "</p>\n"; // 'Template $1 seems to exists, but it is not available from the database. This might be a temporary database issue. Database used: $2.'
 		else // Not available either from db or api
 			echo '<p>' . _html('feedback-template-missing', array('variables' => array(wpLink($server, $template, false)), 'raw-variables' => true)) . "</p>\n"; // 'Template $1 does not exist.'
 	}
