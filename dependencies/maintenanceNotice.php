@@ -31,9 +31,13 @@
 	"text" : "Due to unscheduled maintenance of the Wikimedia Labs infrastructure this tool might suffer temporary outages/instability until the maintenance has finished. Sorry for the inconvenience.<br />For details please check <a href=\"http://lists.wikimedia.org/pipermail/labs-l/2015-January/003279.html\">[Labs-l] Rolling reboots today</a> and <a href=\"https://lists.wikimedia.org/pipermail/labs-l/2015-January/003288.html\">[Labs-l] Rolling reboots today (finished)</a>."
 }
 */
-class MaintenanceNotice
+
+/**
+ * Base class for notices
+ */
+class Notice
 {
-	private $message = array();
+	protected $message = array();
 	
 	private function jsonDecode($jsonStr)
 	{
@@ -70,7 +74,13 @@ class MaintenanceNotice
 			return false; // Not anymore
 		return true;
 	}
-	
+}
+
+/**
+ * Maintenance notices
+ */
+class MaintenanceNotice extends Notice
+{
 	public function display()
 	{
 		// Display message
@@ -87,9 +97,9 @@ class MaintenanceNotice
 	
 	public static function displayMessage($checkGlobal = true, $file = null)
 	{
-		$useFile = $file != null ? $file : './maintenanceNotice.json'; // Either a tool supplied file name or a tool local file named maintenanceNotice.json
+		$useFile = $file != null ? $file : $_SERVER['DOCUMENT_ROOT'] . 'maintenanceNotice.json'; // Either a tool supplied file name or a tool local file named maintenanceNotice.json
 		if ($checkGlobal && !file_exists($useFile))
-			$useFile = '/data/project/templatetransclusioncheck/public_html/maintenanceNotice.json'; // Local file does not exist, try the "global" maintenanceNotice.json
+			$useFile = __DIR__ . '/maintenanceNotice.json'; // Local file does not exist, try the "global" maintenanceNotice.json
 		$notice = new MaintenanceNotice($useFile);
 		if ($notice && $notice->active())
 			$notice->display();
@@ -97,7 +107,26 @@ class MaintenanceNotice
 	}
 }
 
-function maintenanceNotice($checkGlobal = true, $file = null)
+/**
+ * Information notices
+ */
+class InformationNotice extends Notice
 {
-	MaintenanceNotice::displayMessage($checkGlobal, $file);
+	public function display()
+	{
+		// Display message
+		echo '<div style="border: 2px solid green; padding: .3em; margin-bottom: 2em;"><p><span style="font-weight: bold;">Information:</span>';
+		echo '<br />' . $this->message['text'] . '</p></div>' . "\n";
+	}
+	
+	public static function displayMessage($checkGlobal = true, $file = null)
+	{
+		$useFile = $file != null ? $file : $_SERVER['DOCUMENT_ROOT'] . 'informationNotice.json'; // Either a tool supplied file name or a tool local file named informationNotice.json
+		if ($checkGlobal && !file_exists($useFile))
+			$useFile = __DIR__ .'/informationNotice.json'; // Local file does not exist, try the "global" informationNotice.json
+		$notice = new InformationNotice($useFile);
+		if ($notice && $notice->active())
+			$notice->display();
+		unset($notice);
+	}
 }

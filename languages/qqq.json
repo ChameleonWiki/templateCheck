@@ -25,5 +25,5 @@
 	"link-create": "Name for a link for creating a wiki page.",
 	"link-complete": "Name for a link to the complete/full report.",
 	"footer-stats": "A statistics line at the bottom of the report. $1 is the current date/time and $2 is the number of seconds for the request.",
-	"error-language": "An error message displayed if the user has entered an unknown/invalid code for the language.\n{{Optional}}"
+	"error-language": "An error message displayed if the user has entered an unknown/invalid code for the language."
 }

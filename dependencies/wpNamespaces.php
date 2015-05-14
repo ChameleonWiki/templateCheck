@@ -71,7 +71,7 @@ class WikiNS
 		while ($continue)
 		{
 			$json = $wpApi->query($continue . '&meta=siteinfo&siprop=namespaces'); //&silimit=' . WikiAPI::queryLimit);
-			if($json == false || count($json) == 0 || !array_key_exists('query', $json))
+			if(!$json || count($json) == 0 || !array_key_exists('query', $json))
 				break;
 			$namespaces = current($json['query']);
 			foreach ($namespaces as $namespaceInfo)
@@ -95,7 +95,7 @@ class WikiNS
 			while ($continue)
 			{
 				$json = $wpApi->query($continue . '&meta=siteinfo&siprop=namespacealiases'); //&silimit=' . WikiAPI::queryLimit);
-				if($json == false || count($json) == 0 || !array_key_exists('query', $json))
+				if(!$json || count($json) == 0 || !array_key_exists('query', $json))
 					break;
 				$namespaces = current($json['query']);
 				foreach ($namespaces as $namespaceInfo)

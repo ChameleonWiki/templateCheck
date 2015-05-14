@@ -2,8 +2,8 @@
 /*
 	Purpose:  Checks and reports which articles that transcludes a template that are not linked from the template,
 	          and which articles that are linked from the template but don't transclude the template.
-	          Doc: http://tools-static.wmflabs.org/templatetransclusioncheck/
-	          Typical usage: http://en.wikipedia.org/wiki/Template:Squad_maintenance
+	          Doc: //tools-static.wmflabs.org/templatetransclusioncheck/
+	          Typical usage: //en.wikipedia.org/wiki/Template:Squad_maintenance
 	Written:  03. Jan. 2015
 
 	Copyright (c) 2015, Chameleon
@@ -27,10 +27,10 @@
 ini_set('display_errors', 1);
 error_reporting(E_ALL);
 
-define('protocol', isset($_SERVER['HTTPS']) ? 'https' : (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? $_SERVER['HTTP_X_FORWARDED_PROTO'] : 'http'));
 define('scriptLink', './index.php');
-define('cssLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/main.css');
-define('docLink', protocol . '://tools-static.wmflabs.org/templatetransclusioncheck/');
+define('staticStash', '//tools-static.wmflabs.org/templatetransclusioncheck/');
+define('cssLink', staticStash . 'main.css');
+define('docLink', staticStash);
 define('i18nDomain', 'templatetransclusioncheck');
 
 // Dependencies
@@ -43,8 +43,9 @@ require_once('./databaseQueries.php');
 require_once('/data/project/intuition/src/Intuition/ToolStart.php');
 
 $I18N = new Intuition(array('domain' => i18nDomain));
-$I18N->loadMessageFile(i18nDomain, 'en', 'en.json');
+$I18N->loadMessageFile(i18nDomain, 'en', 'languages/en.json');
 
+define('protocol', isset($_SERVER['HTTPS']) ? 'https' : (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) ? $_SERVER['HTTP_X_FORWARDED_PROTO'] : 'http'));
 function wpServer($language)
 {
 	return protocol . "://$language.wikipedia.org/";
@@ -134,8 +135,8 @@ define('redirectSymbolL', ' <span class="redirect">&larr;</span> ');
 		<meta http-equiv="pragma" content="no-cache" />
 	</head>
 	<body>
-		<?php MaintenanceNotice::displayMessage(); ?>
-		<p><a href="<?php echo protocol; ?>://tools.wmflabs.org/"><img src="<?php echo protocol; ?>://upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
+		<?php MaintenanceNotice::displayMessage(); InformationNotice::displayMessage(); ?>
+		<p><a href="//tools.wmflabs.org/"><img src="//upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>
 		<h1><?php echo _html('title'); ?></h1>
 		<p><?php echo _html('description'); ?></p>
 		<form action="<?php echo scriptLink; ?>" method="get">
@@ -267,9 +268,9 @@ if (isset($_GET['lang']) && $template != '')
 	echo '<p class="stats">' . _html('footer-stats', array('variables' => array($I18N->dateFormatted('%a, %d %b %Y %T %Z'), $diffTime))) . '</p>';
 }
 ?>
-<!-- div id="w3c"><a href="http://validator.w3.org/check?uri=referer"><img src="http://www.w3.org/Icons/valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
-<a href="http://jigsaw.w3.org/css-validator/check/referer"><img src="http://www.w3.org/Icons/valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->
-<p class="info"><a href="<?php echo docLink; ?>">Tool</a> is provided by <a href="<?php echo protocol; ?>://wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="<?php echo protocol; ?>://tools.wmflabs.org/">Wikimedia Labs</a>.</p>
+<!-- div id="w3c"><a href="//validator.w3.org/check?uri=referer"><img src="<?php echo staticStash; ?>valid-xml11-blue.png" alt="Valid XHTML 1.1 Strict" width="88" height="31" /></a>
+<a href="//jigsaw.w3.org/css-validator/check/referer"><img src="<?php echo staticStash; ?>valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->
+<p class="info"><a href="<?php echo docLink; ?>">Tool</a> is provided by <a href="//wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="//tools.wmflabs.org/">Wikimedia Labs</a>.</p>
 <?php /*echo $I18N->getFooterLine(i18nDomain);*/ ?>
 </body>
 </html>

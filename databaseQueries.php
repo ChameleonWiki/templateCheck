@@ -33,23 +33,23 @@ class DatabaseSpecialized extends Database
 	{
 		static $recursionLevel = 0;
 		if (!is_numeric($namespace))
-			return array();
+			return null;
 		$result = $this->query("SELECT page_id,page_is_redirect FROM page WHERE page_title='" . $this->wiki_escape_string($title) . "' AND page_namespace=" . $namespace . ";");
-		if (!isset($result))
-			return array();
+		if ($result === false)
+			return null;
 		$row = $result->fetch_array();
 		$result->close();
-		if (!isset($row))
-			return array();
+		if ($row === null)
+			return null;
 		$status['pageid'] = $row['page_id'];
 		if (isset($row['page_is_redirect']) && $row['page_is_redirect'] === '1' && $recursionLevel === 0 && is_numeric($status['pageid']))
 		{
 			$result = $this->query("SELECT rd_title FROM redirect WHERE rd_from=" . $status['pageid'] . ";");
-			if (isset($result))
+			if ($result !== false)
 			{
 				$row = $result->fetch_array();
 				$result->close();
-				if (isset($row))
+				if ($row !== null)
 				{
 					// Might also want namespace for redirect target
 					$status['redirect_title'] = $row['rd_title'];
@@ -66,7 +66,7 @@ class DatabaseSpecialized extends Database
 	private function pageId($title, $namespace = WikiNS::NS_MAIN)
 	{
 		$status = $this->pageStatus($title, $namespace);
-		if (!isset($status['pageid']))
+		if ($status === null || !isset($status['pageid']))
 			return 0;
 		return $status['pageid'];
 	}
@@ -78,7 +78,7 @@ class DatabaseSpecialized extends Database
 		foreach ($links as &$c)
 		{
 			$status = $this->pageStatus($c['title'], $c['ns']);
-			if (!isset($status['pageid']))
+			if ($status === null || !isset($status['pageid']))
 				$c['pageid'] = 0;
 			else
 			{
@@ -102,8 +102,8 @@ class DatabaseSpecialized extends Database
 		if ($namespaceDelimiter > 0)
 		{
 			$templateName = substr($templateName, $namespaceDelimiter + 1);
-			if (isset($templateName) && $templateName != '')
-				return $this->pageId($templateName, WikiNS::NS_TEMPLATE) != 0;
+			if ($templateName !== false && $templateName != '')
+				return $this->pageId($templateName, WikiNS::NS_TEMPLATE) !== 0;
 		}
 		return false;
 	}

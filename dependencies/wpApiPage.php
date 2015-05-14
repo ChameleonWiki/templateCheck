@@ -32,7 +32,7 @@ class WikiPageAPI extends WikiAPI
 	public function pageId($title)
 	{
 		$json = $this->query(self::continueStr() . '&titles=' . self::linkUrlEncode($title));
-		if ($json != false && count($json) > 0)
+		if ($json && count($json) > 0)
 		{
 			$tmp = current($json['query']['pages']);
 			if (array_key_exists('pageid', $tmp))
@@ -52,7 +52,7 @@ class WikiPageAPI extends WikiAPI
 		while ($continue)
 		{
 			$json = $this->query($continue . '&prop=transcludedin&tinamespace=' . $namespace . '&titles=' . self::linkUrlEncode($title) . '&tilimit=' . self::queryLimit);
-			if ($json == false || count($json) == 0)
+			if (!$json || count($json) == 0)
 				return $result;
 			$tmp = current($json['query']['pages']);
 			if (array_key_exists('transcludedin', $tmp))
@@ -73,7 +73,7 @@ class WikiPageAPI extends WikiAPI
 		while ($continue)
 		{
 			$json = $this->query($continue . '&prop=links&plnamespace=' . $namespace . '&titles=' . self::linkUrlEncode($title) . '&pllimit=' . self::queryLimit);
-			if($json == false || count($json) == 0)
+			if(!$json || count($json) == 0)
 				return $result;
 			$tmp = current($json['query']['pages']);
 			if (array_key_exists('links', $tmp))

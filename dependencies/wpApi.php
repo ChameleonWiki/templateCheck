@@ -85,7 +85,7 @@ class WikiAPI
 	)
 	{
 		$continue = $continueStr or self::continueStr();
-		$json = array();
+		$json = null;
 		$apiUrl = $this->queryUrl . $continue . $queryStr;
 		try
 		{
