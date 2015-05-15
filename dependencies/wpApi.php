@@ -29,6 +29,7 @@ require_once('Peachy/HTTP.php');
 class WikiAPI
 {
 	private $instance = null; // HTTP instance
+	private $server = null;
 	private $url = null;
 	private $queryUrl = null;
 	const queryLimit = 500;
@@ -45,7 +46,8 @@ class WikiAPI
 		{
 			die('Could not get HTTP instance: ' . $e->getMessage());
 		}
-		$this->url = $wpServerUrl . 'w/api.php?format=json';
+		$this->server = $wpServerUrl;
+		$this->url = $this->server . 'w/api.php?format=json';
 		$this->queryUrl = $this->url . '&action=query';
 	}
 	
@@ -53,7 +55,13 @@ class WikiAPI
 	{
 		unset($this->queryUrl);
 		unset($this->url);
+		unset($this->server);
 		unset($this->instance);
+	}
+	
+	public function server()
+	{
+		return $this->server;
 	}
 	
 	/*
