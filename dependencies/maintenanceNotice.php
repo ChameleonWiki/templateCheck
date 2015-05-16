@@ -123,7 +123,7 @@ class InformationNotice extends Notice
 	{
 		$useFile = $file != null ? $file : $_SERVER['DOCUMENT_ROOT'] . 'informationNotice.json'; // Either a tool supplied file name or a tool local file named informationNotice.json
 		if ($checkGlobal && !file_exists($useFile))
-			$useFile = __DIR__ .'/informationNotice.json'; // Local file does not exist, try the "global" informationNotice.json
+			$useFile = __DIR__ . '/informationNotice.json'; // Local file does not exist, try the "global" informationNotice.json
 		$notice = new InformationNotice($useFile);
 		if ($notice && $notice->active())
 			$notice->display();
