@@ -246,9 +246,9 @@ class TemplateCheck
 			foreach ($redirects as $c)
 			{
 				s_out('<br />' .
-									 self::wpLink($server, $c['title'], $c['pageid'] != 0, true) . 
-									 self::redirectSymbolR .
-									 self::wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0), 4);
+				      self::wpLink($server, $c['title'], $c['pageid'] != 0, true) . 
+				      self::redirectSymbolR .
+				      self::wpLink($server, $c['redirect_title'], $c['redirect_pageid'] != 0), 4);
 			}
 			s_out('</p></td>', 3);
 			s_out('</tr>', 2);
@@ -375,7 +375,7 @@ class TemplateCheck
 			s_out('<!-- div id="w3c"><a href="//validator.w3.org/check?uri=referer"><img src="' . self::staticStash . 'valid-xhtml11-blue.png" alt="Valid XHTML 1.1" width="88" height="31" /></a>', 1);
 			s_out('<a href="//jigsaw.w3.org/css-validator/check/referer"><img src="' . self::staticStash . 'valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->', 1);
 		}
-		s_out('<p class="info"><a href="' . self::docLink . '">Tool</a> is provided by <a href="//wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="//tools.wmflabs.org/">Wikimedia Labs</a>.</p>', 1);
+		s_out('<p class="info">This <a href="' . self::docLink . '">tool</a> is provided by <a href="//wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="//tools.wmflabs.org/">Wikimedia Labs</a>.</p>', 1);
 		s_out(self::getFooterLine(), 1); //s_out($I18N->getFooterLine(i18nDomain), 1);
 		s_out('</body>');
 		s_out('</html>');
