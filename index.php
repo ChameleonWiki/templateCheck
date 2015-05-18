@@ -167,7 +167,10 @@ class TemplateCheck
 		s_out('<link rel="stylesheet" href="' . self::cssLink . '" type="text/css" />', 1);
 		s_out('<meta name="robots" content="noindex,nofollow" />', 1);
 		if (self::htmlVer === ENT_HTML5)
+		{
 			s_out('<meta charset="UTF-8" />', 1);
+			s_out('<meta name="referrer" content="origin" />', 1);
+		}
 		else
 		{
 			s_out('<meta http-equiv="content-type" content="text/html; charset=UTF-8" />', 1);
@@ -178,7 +181,7 @@ class TemplateCheck
 		s_out('</head>');
 		s_out('<body>');
 		MaintenanceNotice::displayMessage();
-		InformationNotice::displayMessage(true, __DIR__ . '/informationNotice.json');
+		InformationNotice::displayMessage();
 		s_out('<p><a href="//tools.wmflabs.org/"><img src="//upload.wikimedia.org/wikipedia/commons/b/bf/Powered-by-tool-labs.png" alt="Powered by Wikimedia Tool Labs icon" width="105" height="40" id="logo" /></a></p>', 1);
 		s_out('<h1>' . _html('title') . '</h1>', 1);
 		s_out('<p>' . _html('description') . '</p>', 1);
@@ -323,45 +326,6 @@ class TemplateCheck
 		s_out('<p class="stats">' . _html('footer-stats', array('variables' => array($I18N->dateFormatted('%a, %d %b %Y %T %Z'), $diffTime))) . '</p>', 1); // '<p class="stats">Generated: ' . date('D, d M Y H:i:s T') . '. Duration: ' . $diffTime . ' s.</p>'
 	}
 
-	/**
-	** Intuition::getFooterLine does not generate valid html, override until it does.
-	** Eqv to $I18N->getFooterLine(i18nDomain)
-	*/
-	private static function getFooterLine()
-	{
-		global $I18N;
-		
-		// Promo message
-		$promoMsgOpts = array(
-			'domain' => 'tsintuition',
-			'escape' => 'html',
-			'raw-variables' => true,
-			'variables' => array(
-				'<a href="//translatewiki.net/">translatewiki.net</a>',
-				'<a href="' . $I18N->dashboardHome . '">Intuition</a>'
-			),
-		);
-		$powered = $I18N->msg( 'bl-promo', $promoMsgOpts );
-
-		// Help translation
-		$twLinkText = $I18N->msg( 'help-translate-tool', 'tsintuition' );
-		
-		// translatewiki.net/w/i.php?language=nl&title=Special:Translate&group=tsint-0-all
-		$twParams = array(
-			'title' => 'Special:Translate',
-			'language' => $I18N->getLang(),
-			'group' => 'tsint-' . i18nDomain,
-		);
-		$twParams = http_build_query( $twParams );
-		$helpTranslateLink = '<small>(' . IntuitionUtil::tag( $twLinkText, 'a', array(
-			'href' => "//translatewiki.net/w/i.php?$twParams",
-			'title' => $I18N->msg( 'help-translate-tooltip', 'tsintuition' )
-		) ) . ')</small>';
-
-		// Build output
-		return "<div class=\"int-promobox\"><p>$powered {$I18N->dashboardBacklink()} $helpTranslateLink</p></div>";
-	}
-	
 	private function outputFooter()
 	{
 		global $I18N;
@@ -376,7 +340,7 @@ class TemplateCheck
 			s_out('<a href="//jigsaw.w3.org/css-validator/check/referer"><img src="' . self::staticStash . 'valid-css-blue.png" alt="Valid CSS" width="88" height="31" /></a></div -->', 1);
 		}
 		s_out('<p class="info">This <a href="' . self::docLink . '">tool</a> is provided by <a href="//wikitech.wikimedia.org/wiki/User:Chameleon">Chameleon</a> 2015. Powered by <a href="//tools.wmflabs.org/">Wikimedia Labs</a>.</p>', 1);
-		s_out(self::getFooterLine(), 1); //s_out($I18N->getFooterLine(i18nDomain), 1);
+		s_out($I18N->getFooterLine(i18nDomain), 1);
 		s_out('</body>');
 		s_out('</html>');
 	}
