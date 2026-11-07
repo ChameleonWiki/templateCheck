@@ -58,8 +58,6 @@ class Database extends mysqli
 	{
 		unset($hostName);
 		unset($databaseName);
-		if ($this->thread_id)
-			$this->kill($this->thread_id); // Kill connection
 		$this->close(); // Close connection
 	}
 	
