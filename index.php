@@ -25,7 +25,15 @@
 	OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 ini_set('display_errors', 1);
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
+set_error_handler(static function ($severity, $message, $file, $line) {
+	if ($severity !== E_DEPRECATED && $severity !== E_USER_DEPRECATED)
+		return false;
+	if (error_reporting() & $severity)
+		error_log(sprintf('PHP deprecation: %s in %s on line %d', $message, $file, $line));
+	return true;
+});
 
 $oldTime = $_SERVER['REQUEST_TIME'] ? $_SERVER['REQUEST_TIME'] : time();
 
